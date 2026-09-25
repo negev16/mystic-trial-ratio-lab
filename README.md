@@ -31,8 +31,8 @@ kills   = army × attack / enemy defense × counter / 100
 ## Using it
 
 1. Pick the zone: Forest of Life, Crystal Cave, Knowledge Nexus, Molten Fort (Coliseum and Radiant Spire are supported, but hero skills aren't simulated).
-2. Do one attempt and open the battle report.
-3. Copy the Atk / Def / Leth / HP % for all three troop types, **yours and the enemy's**, plus the enemy troop counts.
+2. Before fighting, tap the stage's **View Details**. It shows *My Stats* and *Opponent's Stats* plus the enemy troop counts, and checking it doesn't use an attempt.
+3. Copy the Attack / Defense / Lethality / Health % for all three troop types, **yours and the enemy's**, plus the enemy troop counts.
 4. Press **Find best ratio**. Use 1,000 replays when the result matters: win rates from 100 replays are only accurate to about ±5%.
 
 Your numbers are saved in your browser, per zone.

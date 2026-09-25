@@ -166,7 +166,7 @@ svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
   <header>
     <p class="label">Kingshot · Mystic Trial</p>
     <h1>Mystic Trial Ratio Lab</h1>
-    <p class="lede">Enter the stat bonuses from your battle report. The lab fights the stage for every infantry / cavalry / archer split at 1% steps, then replays the closest contenders a few hundred times with the random cavalry and archer procs to find the ratio that wins most often.</p>
+    <p class="lede">Enter the stats from the stage's <b>View Details</b> screen, before you fight. The lab fights the stage for every infantry / cavalry / archer split at 1% steps, then replays the closest contenders a few hundred times with the random cavalry and archer procs to find the ratio that wins most often.</p>
     <div class="zones" id="zones" role="group" aria-label="Zone"></div>
     <div class="zoneinfo" id="zoneinfo"></div>
     <div class="notice" id="zonewarn" hidden></div>
@@ -203,7 +203,7 @@ svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
       </div>
       <p class="hint" id="e-sum"></p>
       <table class="stats" id="e-stats"></table>
-      <p class="hint">All stats are bonus percentages, for example <span class="num">112.5</span> for +112.5%. Copy them for both sides from the stat comparison in the stage's battle report.</p>
+      <p class="hint">All stats are bonus percentages, for example <span class="num">112.5</span> for +112.5%. Before you fight, tap the stage's <b>View Details</b>: it lists My Stats and Opponent's Stats, plus the enemy troop counts. Checking it doesn't use an attempt.</p>
 
       <hr class="divider">
       <div class="actions">
@@ -319,7 +319,7 @@ const ZONES=[
   {id:"crystal",name:"Crystal Cave",days:"Wed–Thu",sys:"Governor charms",base:[60,20,20]},
   {id:"nexus",name:"Knowledge Nexus",days:"Fri–Sat",sys:"Academy & War Academy research",base:[50,20,30],warn:"If your research unlocked level-11 (TrueGold) troops, set your troop level to Level 11."},
   {id:"molten",name:"Molten Fort",days:"Fri–Sat",sys:"Governor gear",base:[60,15,25]},
-  {id:"coliseum",name:"Coliseum",days:"Mon–Tue",sys:"Heroes & hero gear",base:[50,10,40],heroes:true,warn:"<b>Heroes fight here.</b> Hero stat bonuses count if you copy them from the report, but hero skills are not simulated, so this zone is less reliable."},
+  {id:"coliseum",name:"Coliseum",days:"Mon–Tue",sys:"Heroes & hero gear",base:[50,10,40],heroes:true,warn:"<b>Heroes fight here.</b> Hero stat bonuses count if you copy them from View Details, but hero skills are not simulated, so this zone is less reliable."},
   {id:"spire",name:"Radiant Spire",days:"Sun",sys:"Everything, your own troops",base:[50,15,35],heroes:true,warn:"<b>Heroes and your own troops fight here.</b> Set your real troop level. Hero and pet skills are not simulated, so this zone is less reliable."}
 ];
 const EXAMPLE={

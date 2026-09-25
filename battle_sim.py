@@ -126,7 +126,7 @@ if __name__ == "__main__":
     p.add_argument("--runs", type=int, default=300, help="replays per contender")
     args = p.parse_args()
 
-    # Example numbers (replace with your battle report): [Atk%, Def%, Leth%, HP%]
+    # Example numbers (replace with the stage's View Details screen): [Atk%, Def%, Leth%, HP%]
     you = [[85, 85, 40, 40], [70, 60, 45, 35], [90, 55, 60, 35]]
     enemy = [[85, 85, 40, 45], [70, 65, 40, 35], [90, 60, 55, 35]]
     A, B = per_troop("T10", you), per_troop("T10", enemy)
