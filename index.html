@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Mystic Trial Ratio Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EDF1F2; --surface:#FFFFFF; --surface-2:#E2E8EA; --ink:#15202A; --muted:#566570; --line:#CAD3D7;
+  --accent:#0E7C86; --accent-soft:#D3ECEE; --accent-ink:#FFFFFF;
+  --loss:#B5483A; --loss-soft:#F5DEDA; --warn:#94670A; --warn-soft:#F4E8CF;
+  --inf:#4B62B0; --cav:#B0751A; --arc:#3A8753;
+  --display:"Alegreya SC", "Palatino Linotype", Georgia, serif;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F161B; --surface:#172128; --surface-2:#22303A; --ink:#E4EBEE; --muted:#93A3AC; --line:#2E3D47;
+    --accent:#3DB5BF; --accent-soft:#163A3F; --accent-ink:#06191B;
+    --loss:#E27464; --loss-soft:#3D2320; --warn:#E0B04F; --warn-soft:#3A2F17;
+    --inf:#8298E3; --cav:#E0A547; --arc:#6CC08A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F161B; --surface:#172128; --surface-2:#22303A; --ink:#E4EBEE; --muted:#93A3AC; --line:#2E3D47;
+  --accent:#3DB5BF; --accent-soft:#163A3F; --accent-ink:#06191B;
+  --loss:#E27464; --loss-soft:#3D2320; --warn:#E0B04F; --warn-soft:#3A2F17;
+  --inf:#8298E3; --cav:#E0A547; --arc:#6CC08A;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;padding:0 16px;}
+.wrap{max-width:1240px;margin:0 auto;padding-block:28px 56px;}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.1}
+h2{font-size:21px}
+h3{font-size:17px}
+p{margin:0}
+.lede{color:var(--muted);max-width:68ch;margin-top:8px}
+.label{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* zone picker */
+.zones{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.zone{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.zone small{font-size:11px;color:var(--muted)}
+.zone:hover{border-color:var(--accent)}
+.zone[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.zone[aria-pressed="true"] small{color:inherit;opacity:.8}
+.zone:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,canvas:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.zoneinfo{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:14px;color:var(--muted)}
+.zoneinfo b{color:var(--ink);font-weight:600}
+.notice{margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--warn-soft);color:var(--ink);font-size:13.5px;max-width:80ch}
+.notice b{color:var(--warn)}
+
+.grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:24px;margin-top:26px;align-items:start}
+@media (max-width:940px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.side-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 120px;min-width:0}
+.field label{font-size:12.5px;color:var(--muted)}
+input[type=number],select{font:inherit;font-family:var(--mono);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+table{border-collapse:collapse;width:100%}
+.stats th,.stats td{padding:3px 3px}
+.stats thead th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding-bottom:6px}
+.stats tbody th{text-align:left;font-weight:500;font-size:13.5px;white-space:nowrap;padding-right:6px}
+.stats input{padding:6px 5px;font-size:13.5px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.d-inf{background:var(--inf)}.d-cav{background:var(--cav)}.d-arc{background:var(--arc)}
+.hint{font-size:12.5px;color:var(--muted)}
+.err{font-size:12.5px;color:var(--loss)}
+.divider{border:0;border-top:1px solid var(--line);margin:4px 0}
+.ex-badge{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:999px;padding:2px 9px;white-space:nowrap}
+
+.actions{display:flex;flex-direction:column;gap:12px}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:8px;padding:11px 16px;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--accent);color:var(--accent-ink);font-size:15.5px}
+.btn-primary:hover{filter:brightness(1.07)}
+.btn-primary:disabled{opacity:.6;cursor:progress}
+.btn-quiet{background:transparent;color:var(--muted);border-color:var(--line);font-weight:500;font-size:13.5px;padding:7px 12px}
+.btn-quiet:hover{color:var(--ink);border-color:var(--ink)}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--muted)}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.progress{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+
+/* results */
+.results{display:flex;flex-direction:column;gap:20px;min-width:0}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px}
+@media (max-width:640px){.hero{grid-template-columns:minmax(0,1fr)}}
+.bigratio{font-family:var(--mono);font-size:clamp(38px,6vw,56px);font-weight:500;line-height:1;letter-spacing:-.02em;margin-top:8px;display:flex;align-items:baseline;gap:.12em;flex-wrap:wrap}
+.bigratio .sep{color:var(--line);font-weight:400}
+.bigratio .i{color:var(--inf)}.bigratio .c{color:var(--cav)}.bigratio .a{color:var(--arc)}
+.ratiokey{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}
+.ratiokey span b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:14px;background:var(--surface-2)}
+.bar i{display:block;height:100%}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px}
+.chip.good{background:var(--accent-soft);color:var(--accent)}
+.chip.mid{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--loss-soft);color:var(--loss)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:baseline;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.compare{width:100%;font-size:13.5px}
+.compare th,.compare td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.compare th:first-child,.compare td:first-child{text-align:left}
+.compare thead th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.compare td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.compare td:first-child{font-family:var(--sans)}
+.compare tr.is-best td{color:var(--accent);font-weight:500}
+.compare tbody tr{cursor:pointer}
+.compare tbody tr:hover td{background:var(--surface-2)}
+.pos{color:var(--accent)}.neg{color:var(--loss)}
+.scroll{overflow-x:auto}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);font-weight:600}
+.heatwrap{position:relative;width:100%;max-width:640px}
+#heat{width:100%;display:block;cursor:crosshair;border-radius:4px}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-family:var(--mono);font-size:12px;padding:6px 9px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-115%)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;font-size:12.5px;color:var(--muted)}
+.ramp{width:180px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--loss),var(--surface-2),var(--accent))}
+.rampwrap{display:flex;align-items:center;gap:8px}
+.mk{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px}
+.mk.best{border-radius:50%;border:2.5px solid var(--ink)}
+.mk.base{transform:rotate(45deg) scale(.8);border:2px solid var(--ink)}
+.mk.cur{border:2px dashed var(--ink)}
+.detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px}
+@media (max-width:720px){.detail{grid-template-columns:minmax(0,1fr)}}
+.surv{font-size:13.5px}
+.surv th,.surv td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right}
+.surv th:first-child,.surv td:first-child{text-align:left;white-space:nowrap}
+.surv thead th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.surv td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.surv td:first-child{font-family:var(--sans)}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.upg td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.upg td.lbl{font-family:var(--sans)}
+.method{margin-top:34px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.method section{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--muted)}
+.method h3{color:var(--ink)}
+.method code,.formula{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.formula{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;white-space:pre;overflow-x:auto;line-height:1.6}
+.method a{color:var(--accent)}
+.method ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="label">Kingshot · Mystic Trial</p>
+    <h1>Mystic Trial Ratio Lab</h1>
+    <p class="lede">Enter the stat bonuses from your battle report. The lab fights the stage for every infantry / cavalry / archer split at 1% steps, then replays the closest contenders a few hundred times with the random cavalry and archer procs to find the ratio that wins most often.</p>
+    <div class="zones" id="zones" role="group" aria-label="Zone"></div>
+    <div class="zoneinfo" id="zoneinfo"></div>
+    <div class="notice" id="zonewarn" hidden></div>
+  </header>
+
+  <div class="grid">
+    <!-- INPUTS -->
+    <form class="panel" id="form" autocomplete="off" novalidate>
+      <div class="side-h"><h2>Your squad</h2><span class="ex-badge" id="exbadge">Example numbers</span></div>
+      <div class="row">
+        <div class="field"><label for="y-tier">Troop level</label><select id="y-tier"></select></div>
+        <div class="field"><label for="y-total">Total troops</label><input type="number" id="y-total" min="1" step="1" inputmode="numeric"></div>
+      </div>
+      <table class="stats" id="y-stats"></table>
+      <div>
+        <p class="label" style="margin-bottom:6px">Ratio you use now <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></p>
+        <div class="row">
+          <div class="field"><label for="cur-0"><span class="dot d-inf"></span>Inf %</label><input type="number" id="cur-0" min="0" max="100" step="1"></div>
+          <div class="field"><label for="cur-1"><span class="dot d-cav"></span>Cav %</label><input type="number" id="cur-1" min="0" max="100" step="1"></div>
+          <div class="field"><label for="cur-2"><span class="dot d-arc"></span>Arc %</label><input type="number" id="cur-2" min="0" max="100" step="1"></div>
+        </div>
+        <p class="err" id="cur-err" hidden></p>
+      </div>
+
+      <hr class="divider">
+      <div class="side-h"><h2>Enemy squad</h2></div>
+      <div class="row">
+        <div class="field"><label for="e-tier">Troop level</label><select id="e-tier"></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="e-n0"><span class="dot d-inf"></span>Infantry</label><input type="number" id="e-n0" min="0" step="1" inputmode="numeric"></div>
+        <div class="field"><label for="e-n1"><span class="dot d-cav"></span>Cavalry</label><input type="number" id="e-n1" min="0" step="1" inputmode="numeric"></div>
+        <div class="field"><label for="e-n2"><span class="dot d-arc"></span>Archers</label><input type="number" id="e-n2" min="0" step="1" inputmode="numeric"></div>
+      </div>
+      <p class="hint" id="e-sum"></p>
+      <table class="stats" id="e-stats"></table>
+      <p class="hint">All stats are bonus percentages, for example <span class="num">112.5</span> for +112.5%. Copy them for both sides from the stat comparison in the stage's battle report.</p>
+
+      <hr class="divider">
+      <div class="actions">
+        <div class="row" style="align-items:flex-end">
+          <div class="field"><label for="runs">Replays per contender</label>
+            <select id="runs"><option value="100">100 (fast)</option><option value="300" selected>300</option><option value="1000">1,000 (precise)</option></select></div>
+          <label class="check" style="flex:1 1 140px;padding-bottom:8px"><input type="checkbox" id="fatigue"> Round fatigue (−0.01%/round)</label>
+        </div>
+        <button type="submit" class="btn btn-primary" id="go">Find best ratio</button>
+        <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <p class="hint" id="status">Ready.</p>
+          <button type="button" class="btn btn-quiet" id="reset">Load example numbers</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- RESULTS -->
+    <div class="results" id="results">
+      <div class="hero">
+        <div>
+          <p class="label" id="best-label">Best ratio</p>
+          <div class="bigratio" id="bigratio"><span class="i">–</span></div>
+          <div class="bar" id="bestbar"></div>
+          <div class="ratiokey" id="ratiokey"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><span class="chip" id="bestchip">–</span></div>
+          <dl class="kv" id="bestkv"></dl>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>Contenders</h2><p class="hint">Sorted by win rate over the same set of random rolls. Click a row to inspect it.</p></div>
+        <div class="scroll"><table class="compare" id="cmp"></table></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>Ratio map</h2>
+          <div class="seg" role="group" aria-label="Map range"><button type="button" id="z-full" aria-pressed="false">Full triangle</button><button type="button" id="z-zoom" aria-pressed="true">Zoom on best</button></div>
+        </div>
+        <p class="hint">Each cell is one split. Across is infantry %, up is cavalry %, archers fill the rest. Colour shows the expected outcome without the random procs. Hover to read a cell, click or use arrow keys to inspect it.</p>
+        <div class="heatwrap" id="heatwrap"><canvas id="heat" tabindex="0" aria-label="Ratio map. Use arrow keys to move the selected ratio."></canvas><div class="tip" id="tip" hidden></div></div>
+        <div class="legend">
+          <span class="rampwrap">Enemy keeps more <span class="ramp"></span> You keep more</span>
+          <span><span class="mk best"></span>Best</span>
+          <span><span class="mk base"></span>Community start</span>
+          <span><span class="mk cur"></span>Your current</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2 id="det-h">Selected ratio</h2><span class="chip" id="det-chip"></span></div>
+        <div class="detail">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <dl class="kv" id="det-kv"></dl>
+            <table class="surv" id="det-surv"></table>
+          </div>
+          <div>
+            <p class="label" style="margin-bottom:6px">Troops standing, round by round (expected)</p>
+            <svg id="timeline" viewBox="0 0 600 230" width="100%" role="img" aria-label="Troops remaining per round for both sides"></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>Which upgrade helps most</h2><p class="hint">+5 points on one stat, averaged over the top 5 ratios. Tells you which piece of this zone's system to upgrade next. A small negative means that stat shifts which line breaks first; it is not worth buying.</p></div>
+        <div class="scroll"><table class="compare upg" id="upg"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="method">
+    <section>
+      <h3>How a fight is calculated</h3>
+      <p>Mon–Sat zones give both sides the same level-10 troops, so only your zone's stats change the result. Each round both sides hit at the same time:</p>
+      <div class="formula">attack  = base_atk × (1+Atk%) × 10 × (1+Leth%) / 100
+defense = 10 × (1+Def%) × base_hp × (1+HP%) / 100
+army    = √(squad troops × smaller army total)
+kills   = army × attack / enemy defense × counter / 100</div>
+      <p>Every squad hits the first enemy line still standing: infantry, then cavalry, then archers. A counter hit (Inf→Cav, Cav→Arc, Arc→Inf) does +10%. Cavalry skip to the archers 20% of rounds, archers fire twice 10% of rounds. The fight runs until one side has no troops.</p>
+    </section>
+    <section>
+      <h3>Why 1% can matter</h3>
+      <p>The result hinges on which line collapses first and in which round. Moving 1% can make your infantry last one round longer, which lets your archers fire one more volley. That is why the map has sharp edges instead of a smooth hill, and why the lab tests every 1% step.</p>
+      <p>Replays use the same random rolls for every contender, so the ranking compares ratios, not luck.</p>
+    </section>
+    <section>
+      <h3>Limits</h3>
+      <ul>
+        <li>The formula is the community's reverse-engineering of the shared State of Survival engine, checked against Kingshot battle reports. It is not official.</li>
+        <li>Hero skills and pet skills are not simulated. That matters in the Coliseum, the Radiant Spire and the Forest of Life.</li>
+        <li>Garbage in, garbage out: the answer is only as good as the stats you copy in.</li>
+      </ul>
+      <p>Sources: <a href="https://kingshotsim.com/damage-formula.html" target="_blank" rel="noopener">Absy Labs damage formula</a>, <a href="https://kingshotsim.com/rally-and-troops.html" target="_blank" rel="noopener">real troop base stats</a>, <a href="https://kingshotguides.com/guide/bear-trap-damage-mechanics-and-example-simulation/" target="_blank" rel="noopener">Kingshot Guides worked example</a>, <a href="https://kingshotalmanach.com/events/mystic-trial/" target="_blank" rel="noopener">Almanach zone rules and start ratios</a>.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- data ---------- */
+const BASE={ // [infAtk, infHP, cavAtk, cavHP, arcAtk, arcHP]; base Leth = base Def = 10 for all
+  "T6":[243,730,730,243,974,183],"T9":[400,1200,1200,400,1600,300],
+  "T10":[472,1416,1416,472,1888,354],"T10.1":[491,1473,1473,491,1964,368],"T10.2":[515,1546,1546,515,2062,387],
+  "T10.3":[541,1624,1624,541,2165,406],"T10.4":[568,1705,1705,568,2273,426],"T10.5":[597,1790,1790,597,2387,448],
+  "T11":[566,1699,1699,566,2266,390]};
+const TIER_LABEL={"T6":"Level 6","T9":"Level 9","T10":"Level 10","T10.1":"Level 10 · TG1","T10.2":"Level 10 · TG2","T10.3":"Level 10 · TG3","T10.4":"Level 10 · TG4","T10.5":"Level 10 · TG5","T11":"Level 11 (TrueGold)"};
+const ZONES=[
+  {id:"forest",name:"Forest of Life",days:"Wed–Thu",sys:"Pets",base:[50,15,35],warn:"Pet skills are active by default in this zone and are not simulated here. Treat the answer as a starting point and test ±2% around it."},
+  {id:"crystal",name:"Crystal Cave",days:"Wed–Thu",sys:"Governor charms",base:[60,20,20]},
+  {id:"nexus",name:"Knowledge Nexus",days:"Fri–Sat",sys:"Academy & War Academy research",base:[50,20,30],warn:"If your research unlocked level-11 (TrueGold) troops, set your troop level to Level 11."},
+  {id:"molten",name:"Molten Fort",days:"Fri–Sat",sys:"Governor gear",base:[60,15,25]},
+  {id:"coliseum",name:"Coliseum",days:"Mon–Tue",sys:"Heroes & hero gear",base:[50,10,40],heroes:true,warn:"<b>Heroes fight here.</b> Hero stat bonuses count if you copy them from the report, but hero skills are not simulated, so this zone is less reliable."},
+  {id:"spire",name:"Radiant Spire",days:"Sun",sys:"Everything, your own troops",base:[50,15,35],heroes:true,warn:"<b>Heroes and your own troops fight here.</b> Set your real troop level. Hero and pet skills are not simulated, so this zone is less reliable."}
+];
+const EXAMPLE={
+  yTier:"T10", yTotal:150000, cur:[50,20,30],
+  y:[[85,85,40,40],[70,60,45,35],[90,55,60,35]],
+  eTier:"T10", eN:[75000,30000,45000],
+  e:[[85,85,40,45],[70,65,40,35],[90,60,55,35]]
+};
+const TYPES=["Infantry","Cavalry","Archers"], TKEY=["inf","cav","arc"], STATS=["Atk","Def","Leth","HP"];
+
+/* ---------- engine ---------- */
+function perTroop(tier,st){const b=BASE[tier],att=[],def=[];
+  for(let i=0;i<3;i++){const s=st[i];att.push(b[i*2]*(1+s[0]/100)*10*(1+s[2]/100)/100);def.push(10*(1+s[1]/100)*b[i*2+1]*(1+s[3]/100)/100);}
+  return{att,def};}
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hitSide(n0,n1,n2,att,t0,t1,t2,tdef,am,f,mc,rng,out){
+  const fr=t0>0?0:t1>0?1:t2>0?2:-1; if(fr<0)return;
+  for(let i=0;i<3;i++){const n=i===0?n0:i===1?n1:n2; if(n<=0)continue;
+    const base=Math.sqrt(n*am)*att[i]*f/100;
+    let mult=1; if(i===2) mult=mc?(rng()<0.1?2:1):1.1;
+    if(i===1&&fr!==2&&t2>0){
+      if(mc){addHit(i,rng()<0.2?2:fr,base,mult,1,tdef,mc,out);} else {addHit(i,fr,base,mult,0.8,tdef,mc,out);addHit(i,2,base,mult,0.2,tdef,mc,out);}
+    } else addHit(i,fr,base,mult,1,tdef,mc,out);
+  }}
+function addHit(i,t,b,m,w,tdef,mc,out){const tb=(i===0&&t===1)||(i===1&&t===2)||(i===2&&t===0)?1.1:1;let d=b/tdef[t]*tb*m*w;if(mc)d=Math.ceil(d);out[t]+=d;}
+function battle(nA,A,nB,B,opt){
+  const mc=!!opt.rng,rng=opt.rng,fat=opt.fatigue;
+  let a0=nA[0],a1=nA[1],a2=nA[2],b0=nB[0],b1=nB[1],b2=nB[2];
+  const sA=a0+a1+a2,sB=b0+b1+b2,am=Math.min(sA,sB);
+  const hist=opt.hist?[[sA,sB]]:null; const dA=[0,0,0],dB=[0,0,0]; let r=0;
+  if(sA===0||sB===0) return {win:sA>0?1:sB>0?-1:0,rounds:0,left:[a0,a1,a2],eleft:[b0,b1,b2],score:sA>0?1:-1,hist};
+  while(r<5000){const f=fat?1-r*0.0001:1;
+    dA[0]=dA[1]=dA[2]=dB[0]=dB[1]=dB[2]=0;
+    hitSide(a0,a1,a2,A.att,b0,b1,b2,B.def,am,f,mc,rng,dB);
+    hitSide(b0,b1,b2,B.att,a0,a1,a2,A.def,am,f,mc,rng,dA);
+    a0-=dA[0];a1-=dA[1];a2-=dA[2];b0-=dB[0];b1-=dB[1];b2-=dB[2];
+    if(a0<1)a0=0;if(a1<1)a1=0;if(a2<1)a2=0;if(b0<1)b0=0;if(b1<1)b1=0;if(b2<1)b2=0;
+    r++; const ta=a0+a1+a2,tb=b0+b1+b2; if(hist)hist.push([ta,tb]); if(ta===0||tb===0)break;}
+  const ta=a0+a1+a2,tb=b0+b1+b2; const win=ta>0&&tb===0?1:tb>0&&ta===0?-1:0;
+  return{win,rounds:r,left:[a0,a1,a2],eleft:[b0,b1,b2],score:win>0?ta/sA:win<0?-tb/sB:0,hist};}
+function split(total,i,c){const a=Math.round(total*i/100),b=Math.round(total*c/100);return[a,b,Math.max(0,total-a-b)];}
+function replay(ratio,S,runs,A,B){ // common random numbers: same seed for every contender
+  const rng=mulberry(20260925); let w=0,sc=0,rd=0; const nA=split(S.yTotal,ratio[0],ratio[1]);
+  for(let k=0;k<runs;k++){const r=battle(nA,A,S.eN,B,{rng,fatigue:S.fatigue});w+=r.win>0?1:r.win===0?0.5:0;sc+=r.score;rd+=r.rounds;}
+  return{win:w/runs,score:sc/runs,rounds:rd/runs};}
+
+/* ---------- storage (optional convenience) ---------- */
+const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+
+/* ---------- DOM ---------- */
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString("en-GB");
+const pct=(x,d=1)=>(x*100).toFixed(d)+"%";
+const sgn=(x,d=1)=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(d)+"%";
+let zone=ZONES[3], lastSweep=null, lastRes=null, selected=null, zoom=true, isExample=true;
+
+function buildStatsTable(id,prefix){
+  let h="<thead><tr><th></th>"+STATS.map(s=>`<th>${s} %</th>`).join("")+"</tr></thead><tbody>";
+  for(let i=0;i<3;i++){h+=`<tr><th scope="row"><span class="dot d-${TKEY[i]}"></span>${TYPES[i]}</th>`;
+    for(let j=0;j<4;j++)h+=`<td><input type="number" step="0.1" inputmode="decimal" id="${prefix}-${i}-${j}" aria-label="${prefix==="y"?"Your":"Enemy"} ${TYPES[i]} ${STATS[j]} percent"></td>`;
+    h+="</tr>";}
+  $(id).innerHTML=h+"</tbody>";}
+buildStatsTable("y-stats","y"); buildStatsTable("e-stats","e");
+for(const sel of [$("y-tier"),$("e-tier")]) sel.innerHTML=Object.keys(BASE).map(k=>`<option value="${k}">${TIER_LABEL[k]}</option>`).join("");
+
+$("zones").innerHTML=ZONES.map(z=>`<button type="button" class="zone" data-z="${z.id}" aria-pressed="false">${z.name}<small>${z.days}</small></button>`).join("");
+$("zones").addEventListener("click",e=>{const b=e.target.closest(".zone");if(!b)return;saveZone();setZone(b.dataset.z,true);});
+
+function fill(d){
+  $("y-tier").value=d.yTier;$("y-total").value=d.yTotal;$("e-tier").value=d.eTier;
+  for(let i=0;i<3;i++){$("cur-"+i).value=d.cur&&d.cur[i]!=null?d.cur[i]:"";$("e-n"+i).value=d.eN[i];
+    for(let j=0;j<4;j++){$(`y-${i}-${j}`).value=d.y[i][j];$(`e-${i}-${j}`).value=d.e[i][j];}}
+  updateSum();}
+function readForm(){
+  const v=id=>{const x=parseFloat($(id).value);return isFinite(x)?x:0;};
+  const d={yTier:$("y-tier").value,yTotal:Math.max(1,Math.round(v("y-total"))),eTier:$("e-tier").value,
+    eN:[0,1,2].map(i=>Math.max(0,Math.round(v("e-n"+i)))),y:[],e:[],cur:null,
+    runs:parseInt($("runs").value,10),fatigue:$("fatigue").checked};
+  for(let i=0;i<3;i++){d.y.push([0,1,2,3].map(j=>v(`y-${i}-${j}`)));d.e.push([0,1,2,3].map(j=>v(`e-${i}-${j}`)));}
+  const c=[0,1,2].map(i=>$("cur-"+i).value.trim());
+  if(c.every(x=>x!=="")){const n=c.map(Number);d.curRaw=n;if(Math.abs(n[0]+n[1]+n[2]-100)<0.01)d.cur=n;}
+  return d;}
+function saveZone(){const d=readForm();d.example=isExample;store.set("mtl.v1."+zone.id,d);}
+function setZone(id,load){
+  zone=ZONES.find(z=>z.id===id)||ZONES[3];
+  document.querySelectorAll(".zone").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.z===zone.id)));
+  $("zoneinfo").innerHTML=`<span>Open <b>${zone.days}</b></span><span>Counts only <b>${zone.sys}</b></span><span>Community start <b class="num">${zone.base.join(" / ")}</b></span>`;
+  $("zonewarn").hidden=!zone.warn; $("zonewarn").innerHTML=zone.warn||"";
+  store.set("mtl.v1.zone",zone.id);
+  if(load){const s=store.get("mtl.v1."+zone.id);if(s&&s.y){fill(s);setExample(!!s.example);}else{fill(EXAMPLE);setExample(true);} run();}
+}
+function setExample(on){isExample=on;$("exbadge").hidden=!on;}
+function updateSum(){const s=[0,1,2].map(i=>parseFloat($("e-n"+i).value)||0),t=s[0]+s[1]+s[2];
+  $("e-sum").textContent=t>0?`Enemy total ${fmt(t)} · split ${s.map(x=>Math.round(x/t*100)).join(" / ")}`:"Enter the enemy troop counts.";}
+$("form").addEventListener("input",e=>{if(e.target.id&&e.target.id.startsWith("e-n"))updateSum();setExample(false);});
+$("form").addEventListener("submit",e=>{e.preventDefault();saveZone();run();});
+$("reset").addEventListener("click",()=>{fill(EXAMPLE);setExample(true);saveZone();run();});
+
+/* ---------- run ---------- */
+let runToken=0;
+function run(){
+  const S=readForm(); const tok=++runToken;
+  const cerr=$("cur-err");
+  if(S.curRaw&&!S.cur){cerr.hidden=false;cerr.textContent=`Your current ratio adds up to ${S.curRaw.reduce((a,b)=>a+b,0)}%. It needs to total 100%.`;} else cerr.hidden=true;
+  if(S.eN[0]+S.eN[1]+S.eN[2]===0){$("status").textContent="Enter at least one enemy troop to run the fight.";return;}
+  const A=perTroop(S.yTier,S.y), B=perTroop(S.eTier,S.e);
+  $("go").disabled=true; $("status").textContent="Fighting every split at 1% steps…"; $("prog").style.width="3%";
+  setTimeout(()=>{
+    if(tok!==runToken)return;
+    // 1. expected sweep over all splits
+    const grid=new Float32Array(101*101).fill(NaN), rounds=new Uint16Array(101*101); const list=[];
+    for(let i=0;i<=100;i++)for(let c=0;i+c<=100;c++){const r=battle(split(S.yTotal,i,c),A,S.eN,B,{fatigue:S.fatigue});grid[i*101+c]=r.score;rounds[i*101+c]=r.rounds;list.push([i,c,r.score]);}
+    list.sort((a,b)=>b[2]-a[2]);
+    // 2. contenders: top 40 + community start + current
+    const key=r=>r[0]+","+r[1]; const seen=new Set(); const cands=[];
+    const push=(r,tag)=>{const k=key(r);if(seen.has(k)){const x=cands.find(q=>key(q.ratio)===k);if(tag&&x)x.tags.push(tag);return;}seen.add(k);cands.push({ratio:[r[0],r[1],100-r[0]-r[1]],tags:tag?[tag]:[]});};
+    list.slice(0,40).forEach(r=>push(r));
+    push(zone.base,"Community start"); if(S.cur)push(S.cur,"Your current");
+    lastSweep={grid,rounds,S,A,B};
+    // 3. Monte Carlo replays in chunks
+    let k=0; const t0=performance.now();
+    function step(){
+      if(tok!==runToken)return;
+      const until=performance.now()+30;
+      while(k<cands.length&&performance.now()<until){const c=cands[k];Object.assign(c,replay(c.ratio,S,S.runs,A,B));c.exp=grid[c.ratio[0]*101+c.ratio[1]];k++;}
+      $("prog").style.width=(5+95*k/cands.length)+"%";
+      $("status").textContent=`Replaying contenders ${k}/${cands.length}…`;
+      if(k<cands.length){setTimeout(step,0);return;}
+      cands.sort((a,b)=>b.win-a.win||b.score-a.score);
+      lastRes={cands,S,A,B,ms:performance.now()-t0};
+      const best=cands[0];
+      selected=[best.ratio[0],best.ratio[1]];
+      renderAll();
+      $("go").disabled=false; $("status").textContent=`Done. ${fmt(5151)} splits fought, ${cands.length} contenders × ${fmt(S.runs)} replays.`;
+      setTimeout(()=>{$("prog").style.width="0";},600);
+    }
+    step();
+  },30);
+}
+
+/* ---------- render ---------- */
+function chip(el,w){el.className="chip "+(w>=0.7?"good":w>=0.4?"mid":"bad");el.textContent=(w>=0.7?"Likely win":w>=0.4?"Coin flip":"Likely loss")+" · "+pct(w,0);}
+function renderAll(){renderHero();renderTable();drawHeat();renderDetail();renderUpgrades();}
+function renderHero(){
+  const {cands,S}=lastRes,b=cands[0],r=b.ratio,n=split(S.yTotal,r[0],r[1]);
+  $("bigratio").innerHTML=`<span class="i">${r[0]}</span><span class="sep">/</span><span class="c">${r[1]}</span><span class="sep">/</span><span class="a">${r[2]}</span>`;
+  $("bestbar").innerHTML=`<i style="width:${r[0]}%;background:var(--inf)"></i><i style="width:${r[1]}%;background:var(--cav)"></i><i style="width:${r[2]}%;background:var(--arc)"></i>`;
+  $("ratiokey").innerHTML=[0,1,2].map(i=>`<span><span class="dot d-${TKEY[i]}"></span>${TYPES[i]} <b>${fmt(n[i])}</b></span>`).join("");
+  $("best-label").textContent="Best ratio · "+zone.name;
+  chip($("bestchip"),b.win);
+  const base=cands.find(c=>c.tags.includes("Community start")),cur=cands.find(c=>c.tags.includes("Your current"));
+  let kv=`<dt>Win rate</dt><dd>${pct(b.win,1)}</dd><dt>Avg margin</dt><dd class="${b.score>=0?"pos":"neg"}">${sgn(b.score)}</dd><dt>Avg rounds</dt><dd>${b.rounds.toFixed(0)}</dd>`;
+  if(base&&base!==b)kv+=`<dt>vs ${base.ratio.join("/")}</dt><dd>${sgn(b.win-base.win,0).replace("%"," pts")} win rate</dd>`;
+  if(cur&&cur!==b)kv+=`<dt>vs your ${cur.ratio.join("/")}</dt><dd>${sgn(b.win-cur.win,0).replace("%"," pts")} win rate</dd>`;
+  $("bestkv").innerHTML=kv;}
+function renderTable(){
+  const {cands}=lastRes; const rows=cands.slice(0,10); const extra=cands.filter((c,i)=>i>=10&&c.tags.length);
+  let h="<thead><tr><th>Inf / Cav / Arc</th><th>Win rate</th><th>Avg margin</th><th>Rounds</th><th></th></tr></thead><tbody>";
+  const row=(c,i)=>`<tr class="${i===0?"is-best":""}" data-r="${c.ratio[0]},${c.ratio[1]}" tabindex="0"><td class="num" style="font-family:var(--mono)">${c.ratio.join(" / ")}</td><td>${pct(c.win,1)}</td><td class="${c.score>=0?"pos":"neg"}">${sgn(c.score)}</td><td>${c.rounds.toFixed(0)}</td><td style="font-family:var(--sans);color:var(--muted);text-align:left">${i===0?"Best":""}${c.tags.length?(i===0?" · ":"")+c.tags.join(", "):""}</td></tr>`;
+  rows.forEach((c,i)=>h+=row(c,i));
+  extra.forEach(c=>h+=row(c,cands.indexOf(c)));
+  $("cmp").innerHTML=h+"</tbody>";}
+$("cmp").addEventListener("click",e=>{const tr=e.target.closest("tr[data-r]");if(!tr)return;selected=tr.dataset.r.split(",").map(Number);drawHeat();renderDetail();});
+$("cmp").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const tr=e.target.closest("tr[data-r]");if(!tr)return;selected=tr.dataset.r.split(",").map(Number);drawHeat();renderDetail();});
+
+/* heatmap */
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function hex(h){h=h.replace("#","");if(h.length===3)h=h.split("").map(x=>x+x).join("");return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function mix(a,b,t){return`rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;}
+let view=null;
+function range(){
+  if(!zoom||!lastRes)return{x0:0,x1:100,y0:0,y1:100};
+  const b=lastRes.cands[0].ratio; let x0=Math.max(0,b[0]-20),x1=Math.min(100,x0+40);x0=Math.max(0,x1-40);
+  let y0=Math.max(0,b[1]-15),y1=Math.min(100,y0+30);y0=Math.max(0,y1-30); return{x0,x1,y0,y1};}
+function drawHeat(){
+  if(!lastSweep||!lastRes)return;
+  const cv=$("heat"),wrap=$("heatwrap"),W=Math.min(640,wrap.clientWidth),H=Math.round(W*0.78),dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+"px";const g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  const R=range(),pl=44,pb=40,pt=8,pr=8,pw=W-pl-pr,ph=H-pt-pb,nx=R.x1-R.x0+1,ny=R.y1-R.y0+1,cw=pw/nx,ch=ph/ny;
+  view={R,pl,pt,pw,ph,cw,ch,W,H};
+  const bg=hex(cssv("--surface")),neu=hex(cssv("--surface-2")),win=hex(cssv("--accent")),los=hex(cssv("--loss")),ink=cssv("--ink"),mut=cssv("--muted"),line=cssv("--line");
+  g.fillStyle=cssv("--surface");g.fillRect(0,0,W,H);
+  const grid=lastSweep.grid; let m=0.02; for(let i=R.x0;i<=R.x1;i++)for(let c=R.y0;c<=R.y1&&i+c<=100;c++){const v=Math.abs(grid[i*101+c]);if(v>m)m=v;}
+  for(let i=R.x0;i<=R.x1;i++)for(let c=R.y0;c<=R.y1;c++){ if(i+c>100)continue; const v=grid[i*101+c];
+    const t=Math.sqrt(Math.min(1,Math.abs(v)/m)); g.fillStyle=v>=0?mix(neu,win,t):mix(neu,los,t);
+    const x=pl+(i-R.x0)*cw,y=pt+ph-(c-R.y0+1)*ch; g.fillRect(x,y,Math.ceil(cw),Math.ceil(ch));}
+  // axes
+  g.strokeStyle=line;g.lineWidth=1;g.beginPath();g.moveTo(pl,pt);g.lineTo(pl,pt+ph);g.lineTo(pl+pw,pt+ph);g.stroke();
+  g.fillStyle=mut;g.font="11px 'IBM Plex Mono', monospace";g.textAlign="center";g.textBaseline="top";
+  const step=(R.x1-R.x0)>50?20:5;
+  for(let v=Math.ceil(R.x0/step)*step;v<=R.x1;v+=step){const x=pl+(v-R.x0+0.5)*cw;g.fillText(v,x,pt+ph+5);}
+  g.textAlign="right";g.textBaseline="middle";
+  const sy=(R.y1-R.y0)>50?20:5;
+  for(let v=Math.ceil(R.y0/sy)*sy;v<=R.y1;v+=sy){const y=pt+ph-(v-R.y0+0.5)*ch;g.fillText(v,pl-6,y);}
+  g.font="12px 'IBM Plex Sans', sans-serif";g.textAlign="center";g.textBaseline="bottom";g.fillText("Infantry %",pl+pw/2,H-2);
+  g.save();g.translate(12,pt+ph/2);g.rotate(-Math.PI/2);g.textBaseline="middle";g.fillText("Cavalry %",0,0);g.restore();
+  // markers
+  const pos=(i,c)=>[pl+(i-R.x0+0.5)*cw,pt+ph-(c-R.y0+0.5)*ch];
+  const inR=(i,c)=>i>=R.x0&&i<=R.x1&&c>=R.y0&&c<=R.y1;
+  const s=Math.max(5,Math.min(cw,ch)*0.9);
+  g.strokeStyle=ink;
+  const base=zone.base; if(inR(base[0],base[1])){const[x,y]=pos(base[0],base[1]);g.lineWidth=2;g.beginPath();g.moveTo(x,y-s);g.lineTo(x+s,y);g.lineTo(x,y+s);g.lineTo(x-s,y);g.closePath();g.stroke();}
+  const cur=lastRes.S.cur; if(cur&&inR(cur[0],cur[1])){const[x,y]=pos(cur[0],cur[1]);g.lineWidth=2;g.setLineDash([3,2]);g.strokeRect(x-s,y-s,2*s,2*s);g.setLineDash([]);}
+  const b=lastRes.cands[0].ratio; if(inR(b[0],b[1])){const[x,y]=pos(b[0],b[1]);g.lineWidth=2.5;g.beginPath();g.arc(x,y,s*1.1,0,Math.PI*2);g.stroke();}
+  if(selected&&inR(selected[0],selected[1])){const[x,y]=pos(selected[0],selected[1]);g.lineWidth=1.5;g.strokeStyle=ink;g.strokeRect(x-cw/2-1.5,y-ch/2-1.5,cw+3,ch+3);}
+}
+function cellAt(ev){if(!view)return null;const r=$("heat").getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;
+  const i=Math.floor((x-view.pl)/view.cw)+view.R.x0,c=Math.floor((view.pt+view.ph-y)/view.ch)+view.R.y0;
+  if(i<view.R.x0||i>view.R.x1||c<view.R.y0||c>view.R.y1||i+c>100)return null;return{i,c,x,y};}
+$("heat").addEventListener("pointermove",ev=>{const p=cellAt(ev),tip=$("tip");if(!p){tip.hidden=true;return;}
+  const v=lastSweep.grid[p.i*101+p.c];tip.hidden=false;tip.style.left=p.x+"px";tip.style.top=p.y+"px";
+  tip.textContent=`${p.i} / ${p.c} / ${100-p.i-p.c}  ·  ${v>0?"win":v<0?"loss":"draw"} ${sgn(v)}`;});
+$("heat").addEventListener("pointerleave",()=>{$("tip").hidden=true;});
+$("heat").addEventListener("click",ev=>{const p=cellAt(ev);if(!p)return;selected=[p.i,p.c];drawHeat();renderDetail();});
+$("heat").addEventListener("keydown",e=>{if(!selected)return;const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(!d)return;e.preventDefault();
+  const i=Math.max(0,Math.min(100,selected[0]+d[0])),c=Math.max(0,Math.min(100-i,selected[1]+d[1]));selected=[i,c];drawHeat();renderDetail();});
+$("z-full").addEventListener("click",()=>{zoom=false;$("z-full").setAttribute("aria-pressed","true");$("z-zoom").setAttribute("aria-pressed","false");drawHeat();});
+$("z-zoom").addEventListener("click",()=>{zoom=true;$("z-zoom").setAttribute("aria-pressed","true");$("z-full").setAttribute("aria-pressed","false");drawHeat();});
+
+/* detail */
+function renderDetail(){
+  if(!lastRes||!selected)return;const{S,A,B,cands}=lastRes;const r=[selected[0],selected[1],100-selected[0]-selected[1]];
+  const nA=split(S.yTotal,r[0],r[1]);const ex=battle(nA,A,S.eN,B,{fatigue:S.fatigue,hist:true});
+  const known=cands.find(c=>c.ratio[0]===r[0]&&c.ratio[1]===r[1]);const mc=known||replay(r,S,S.runs,A,B);
+  $("det-h").textContent="Selected ratio · "+r.join(" / ");chip($("det-chip"),mc.win);
+  const rank=known?cands.indexOf(known)+1:null;
+  $("det-kv").innerHTML=`<dt>Win rate</dt><dd>${pct(mc.win,1)}${rank?` · #${rank} of ${cands.length}`:""}</dd><dt>Avg margin</dt><dd class="${mc.score>=0?"pos":"neg"}">${sgn(mc.score)}</dd><dt>Expected fight</dt><dd>${ex.win>0?"Win":ex.win<0?"Loss":"Draw"} in ${ex.rounds} rounds</dd>`;
+  let h="<thead><tr><th>Line</th><th>You send</th><th>You keep</th><th>Enemy keeps</th></tr></thead><tbody>";
+  for(let i=0;i<3;i++)h+=`<tr><td><span class="dot d-${TKEY[i]}"></span>${TYPES[i]}</td><td>${fmt(nA[i])}</td><td>${fmt(ex.left[i])}</td><td>${fmt(ex.eleft[i])}</td></tr>`;
+  $("det-surv").innerHTML=h+"</tbody>";
+  drawTimeline(ex.hist);}
+function drawTimeline(hs){
+  const W=600,H=230,pl=58,pr=12,pt=12,pb=30,pw=W-pl-pr,ph=H-pt-pb;const n=hs.length-1||1;
+  const mx=Math.max(hs[0][0],hs[0][1]);const X=i=>pl+i/n*pw,Y=v=>pt+ph-v/mx*ph;
+  let s="";for(let k=0;k<=4;k++){const v=mx*k/4,y=Y(v);s+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${pl-8}" y="${y+4}" text-anchor="end">${v>=1000?Math.round(v/1000)+"k":Math.round(v)}</text>`;}
+  const ts=n>40?10:5;for(let i=0;i<=n;i+=ts)s+=`<text x="${X(i)}" y="${H-10}" text-anchor="middle">${i}</text>`;
+  const path=j=>hs.map((h,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(h[j]).toFixed(1)}`).join("");
+  s+=`<path d="${path(0)} L${X(n)},${Y(0)} L${X(0)},${Y(0)} Z" fill="var(--accent)" fill-opacity=".10"/>`;
+  s+=`<path d="${path(1)}" fill="none" stroke="var(--loss)" stroke-width="2"/><path d="${path(0)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+  const e=hs[n];s+=`<circle cx="${X(n)}" cy="${Y(e[0])}" r="4" fill="var(--accent)"/><circle cx="${X(n)}" cy="${Y(e[1])}" r="4" fill="var(--loss)"/>`;
+  s+=`<text x="${W-pr-60}" y="${pt+14}" text-anchor="end" style="fill:var(--accent);font-family:var(--sans);font-weight:600">You</text><text x="${W-pr}" y="${pt+14}" text-anchor="end" style="fill:var(--loss);font-family:var(--sans);font-weight:600">Enemy</text><text x="${W-pr}" y="${H-10}" text-anchor="end" style="font-family:var(--sans)">round</text>`;
+  $("timeline").innerHTML=s;}
+
+/* upgrades */
+function renderUpgrades(){
+  // averaged over the top 5 contenders so one ratio's round-timing quirks don't dominate
+  const{S,cands}=lastRes;const top5=cands.slice(0,5);const runs=150;const A0=perTroop(S.yTier,S.y),B=perTroop(S.eTier,S.e);
+  const refs=top5.map(c=>replay(c.ratio,S,runs,A0,B));const rows=[];
+  for(let i=0;i<3;i++)for(let j=0;j<4;j++){const y=S.y.map(r=>r.slice());y[i][j]+=5;const A=perTroop(S.yTier,y);let dw=0,ds=0;
+    top5.forEach((c,k)=>{const r=replay(c.ratio,S,runs,A,B);dw+=r.win-refs[k].win;ds+=r.score-refs[k].score;});
+    rows.push({i,j,dw:dw/top5.length,ds:ds/top5.length});}
+  rows.sort((a,c)=>c.ds-a.ds);const top=rows[0].ds;
+  let h="<thead><tr><th>+5 points on</th><th>Win rate change</th><th>Margin change</th><th></th></tr></thead><tbody>";
+  rows.forEach((r,k)=>{h+=`<tr${k===0?' class="is-best"':""}><td class="lbl"><span class="dot d-${TKEY[r.i]}"></span>${TYPES[r.i]} ${STATS[r.j]}</td><td class="${r.dw>=0?"pos":"neg"}">${sgn(r.dw,1).replace("%"," pts")}</td><td class="${r.ds>=0?"pos":"neg"}">${sgn(r.ds,2)}</td><td style="width:32%"><div style="height:6px;border-radius:3px;background:var(--accent);width:${top>0?Math.max(0,r.ds/top*100):0}%"></div></td></tr>`;});
+  $("upg").innerHTML=h+"</tbody>";}
+
+/* theme + resize redraw */
+let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(drawHeat,120);});
+try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",drawHeat);}catch(e){}
+new MutationObserver(drawHeat).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+/* boot */
+const saved=store.get("mtl.v1.zone"); setZone(ZONES.some(z=>z.id===saved)?saved:"molten",true);
+})();
+</script>
+</body>
+</html>
