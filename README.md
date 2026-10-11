@@ -41,13 +41,14 @@ Your numbers are saved in your browser, per zone.
 
 **▶ https://negev16.github.io/mystic-trial-ratio-lab/spire.html**
 
-Radiant Spire is two of your squads against two enemy squads: Squad 1 vs enemy 1, Squad 2 vs enemy 2, then the survivors fight on. The planner:
+On Sunday you fight with 1, 2 or 3 squads against the same number of enemy squads. Each squad first meets the enemy squad in the same slot, then the survivors keep fighting with the troops they have left (no healing). Squad 3 unlocks after clearing Stage 25-10.
 
-1. Splits your troops by level between both squads (Squad 1 gets the highest level first).
-2. Learns hero strength from attempts you already lost: it fits one strength factor for your Squad 2 and for each enemy squad so the model reproduces the troops left after every round.
-3. Searches every pair of ratios, replays the best ones with the random procs, and gives the exact troop numbers per level for each squad.
+The planner:
+1. Splits your troops by level between your squads (Squad 1 gets the highest level first).
+2. Learns hero strength from attempts you already lost: it fits one strength factor for each of your squads after the first and one for each enemy squad, so the model reproduces the troops left after every round.
+3. Searches the ratios (every pair for 2 squads, squad by squad for 3), replays the best plans with the random procs, and gives the exact troop numbers per level for each squad.
 
-On stage 8-10 it reproduced six real rounds to within 1.5% and the recommended plan cleared the stage.
+On stage 8-10 it reproduced six real rounds to within 1.5% and its plan cleared the stage. Pairing after round 1 follows what battle reports show; Kingshot hasn't documented it officially.
 
 ## Files
 
