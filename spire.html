@@ -141,7 +141,7 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:13.5px}
   <a class="back" href="./">← Mystic Trial Ratio Lab</a>
   <p class="label">Kingshot · Mystic Trial · Sunday</p>
   <h1>Radiant Spire Planner</h1>
-  <p class="lede">On Sunday you fight with 1, 2 or 3 squads against the same number of enemy squads. Each of your squads first meets the enemy squad in the same slot, then the survivors keep fighting with the troops they have left. This planner splits your troops between your squads and finds the ratios that win most often.</p>
+  <p class="lede">On Sunday you fight with 1, 2 or 3 squads against the same number of enemy squads. Every round one of your squads fights one enemy squad, and survivors keep fighting later with the troops they have left. The game picks who fights whom, and battle reports show the order changes from one fight to the next. This planner splits your troops between your squads and finds the ratios that win most often.</p>
 
   <details class="guide" id="guide" open>
     <summary>How to use it (2 minutes)</summary>
@@ -149,7 +149,7 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:13.5px}
       <li><b>Pick how many squads</b> you have in the game's Squad Config screen.</li>
       <li><b>Your troops:</b> type your troop counts per level from Edit Formation (Elite VIII = level 8, Heroic VI = level 6).</li>
       <li><b>Stats:</b> copy each squad's bonus % and the enemy's from a Radiant Spire battle report (Bonus Details: left column is you, right column is the enemy).</li>
-      <li><b>Lost attempts (recommended):</b> after a loss, enter the ratios you used and the troops left after each round. The planner uses this to measure the hidden hero strength.</li>
+      <li><b>Lost attempts (recommended):</b> after a loss, enter the ratios you used and, for each round, which squads fought and the troops left. The planner uses this to measure the hidden hero strength.</li>
       <li>Tap <b>Plan my Sunday</b> and set your squads exactly as the plan says.</li>
     </ol>
   </details>
@@ -159,6 +159,9 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:13.5px}
       <div class="step"><span class="n">1</span><h2>Squads</h2><span class="ex" id="ex">Example numbers</span></div>
       <div class="seg" role="group" aria-label="Number of squads" id="nsel"><button type="button" data-n="1" aria-pressed="false">1</button><button type="button" data-n="2" aria-pressed="true">2</button><button type="button" data-n="3" aria-pressed="false">3</button></div>
       <p class="hint" id="nhint"></p>
+      <p class="label" style="margin-top:4px">Fight order</p>
+      <div class="seg" role="group" aria-label="Fight order" id="osel"><button type="button" data-o="random" aria-pressed="true">Random</button><button type="button" data-o="fixed" aria-pressed="false">Fixed</button></div>
+      <p class="hint" id="ohint"></p>
       <div class="row"><div class="field"><label for="size">Troops per squad</label><input type="number" id="size" min="1" step="1" inputmode="numeric"></div></div>
       <hr>
 
@@ -181,7 +184,7 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:13.5px}
       <hr>
 
       <div class="step"><span class="n">5</span><h2>Lost attempts</h2></div>
-      <p class="hint">Optional but strongly recommended: the formula can't see hero skills, so the planner learns them from real rounds. Find the numbers in Battle Report → Radiant Spire → your stage → the rounds screen.</p>
+      <p class="hint">Optional but strongly recommended: the formula can't see hero skills, so the planner learns them from real rounds. Find them in Battle Report → Radiant Spire → your stage → the rounds screen. Number the enemy squads in the order they first appear; an enemy squad that fights again keeps its number (recognise it by its heroes).</p>
       <div id="attempts" style="display:flex;flex-direction:column;gap:10px"></div>
       <button type="button" class="btn btn-quiet" id="add" style="align-self:flex-start">+ Add a lost attempt</button>
       <hr>
@@ -225,13 +228,13 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:13.5px}
 
   <div class="notes">
     <section><h3>How it plans</h3>
-      <p>It simulates the whole Sunday fight, round by round, for every combination of ratios at 5% steps, refines the best area at 1% steps, then replays the top plans hundreds of times with the random cavalry and archer procs. Every plan gets the same random rolls, so the ranking compares plans, not luck.</p></section>
+      <p>It simulates the whole Sunday fight, round by round, for every combination of ratios, refines the best area at 1% steps, then replays the top plans hundreds of times with the random cavalry and archer procs. With "Random" fight order it averages over every order the game can pick, so the plan holds up whichever squads meet first.</p></section>
     <section><h3>How it calibrates</h3>
       <p>It finds one strength factor for each of your squads after the first, and one for each enemy squad, so that the model reproduces the troops left after every round of your lost attempts. On stage 8-10 it reproduced six real rounds to within 1.5%, and its plan cleared the stage.</p></section>
     <section><h3>Limits</h3>
       <ul><li>Level 7 and 8 base stats are estimated between the known level 6 and 9 values.</li>
       <li>A calibration only holds for the same heroes and the same stage.</li>
-      <li>Pairing after round 1 follows what battle reports show (first survivors meet first). Kingshot hasn't documented it.</li>
+      <li>Battle reports show the fight order changes between fights; "Random" assumes every order is equally likely. Kingshot hasn't documented the rule.</li>
       <li>Squad 3 unlocks after clearing Stage 25-10. When Squad 2 unlocks isn't documented.</li>
       <li>Community reverse-engineered formula, not official.</li></ul></section>
   </div>
@@ -254,18 +257,36 @@ function hit(n,att,tn,tdef,am,rng,out){
   function add(i,t,b,m,w){const c=(i===0&&t===1)||(i===1&&t===2)||(i===2&&t===0)?1.1:1;let d=b/tdef[t]*c*m*w;if(rng)d=Math.ceil(d);out[t]+=d;}}
 const sum=x=>x[0]+x[1]+x[2];
 function battle(a0,A,b0,B,rng){const a=a0.slice(),b=b0.slice(),am=Math.min(sum(a),sum(b));let r=0;
+  if(am<=0)return{a,b};
   while(sum(a)>0&&sum(b)>0&&r<5000){const da=[0,0,0],db=[0,0,0];hit(a,A.att,b,B.def,am,rng,db);hit(b,B.att,a,A.def,am,rng,da);
     for(let k=0;k<3;k++){a[k]-=da[k];if(a[k]<1)a[k]=0;b[k]-=db[k];if(b[k]<1)b[k]=0;}r++;}
   return{a,b};}
-// N vs N: slot k fights slot k, then the first survivors on each side meet, until one side is gone
-function chain(sq,en,rng){const rounds=[],y=[],z=[];
-  for(let k=0;k<sq.length;k++){const r=battle(sq[k].n,sq[k].P,en[k].n,en[k].P,rng);rounds.push([sum(r.a),sum(r.b)]);
-    if(sum(r.a)>0)y.push({n:r.a,P:sq[k].P});if(sum(r.b)>0)z.push({n:r.b,P:en[k].P});}
-  while(y.length&&z.length){const r=battle(y[0].n,y[0].P,z[0].n,z[0].P,rng);rounds.push([sum(r.a),sum(r.b)]);
-    if(sum(r.a)>0){y[0].n=r.a;z.shift();}else{y.shift();if(sum(r.b)>0)z[0].n=r.b;else z.shift();}}
-  const win=!z.length&&y.length?1:0,yl=y.reduce((s,q)=>s+sum(q.n),0),zl=z.reduce((s,q)=>s+sum(q.n),0);
-  const ty=sq.reduce((s,q)=>s+sum(q.n),0),tz=en.reduce((s,q)=>s+sum(q.n),0);
-  return{win,rounds,score:win?yl/ty:-zl/tz};}
+function leaf(Y,Z,ty,tz){const win=!Z.length&&Y.length?1:0;const yl=Y.reduce((s,q)=>s+sum(q.n),0),zl=Z.reduce((s,q)=>s+sum(q.n),0);return{win,score:win?yl/ty:-zl/tz};}
+function step(Y,Z,i,j,rng){const r=battle(Y[i].n,Y[i].P,Z[j].n,Z[j].P,rng);
+  const Y2=Y.slice(),Z2=Z.slice();
+  if(sum(r.a)>0)Y2[i]={n:r.a,P:Y[i].P};else Y2.splice(i,1);
+  if(sum(r.b)>0)Z2[j]={n:r.b,P:Z[j].P};else Z2.splice(j,1);
+  return[Y2,Z2];}
+// Fixed order: slot k vs slot k, then the first survivors on each side meet
+function fixedOrder(sq,en,rng){let Y=sq.slice(),Z=en.slice();const ty=sq.reduce((s,q)=>s+sum(q.n),0),tz=en.reduce((s,q)=>s+sum(q.n),0);
+  const yA=[],zA=[];
+  for(let k=0;k<sq.length;k++){const r=battle(sq[k].n,sq[k].P,en[k].n,en[k].P,rng);if(sum(r.a)>0)yA.push({n:r.a,P:sq[k].P});if(sum(r.b)>0)zA.push({n:r.b,P:en[k].P});}
+  Y=yA;Z=zA;while(Y.length&&Z.length){[Y,Z]=step(Y,Z,0,0,rng);}
+  return leaf(Y,Z,ty,tz);}
+// Random order: each round the game picks one remaining squad per side at random
+function randomOrderExact(sq,en){const ty=sq.reduce((s,q)=>s+sum(q.n),0),tz=en.reduce((s,q)=>s+sum(q.n),0);
+  const rec=(Y,Z)=>{if(!Y.length||!Z.length)return leaf(Y,Z,ty,tz);let w=0,s=0;const k=Y.length*Z.length;
+    for(let i=0;i<Y.length;i++)for(let j=0;j<Z.length;j++){const [Y2,Z2]=step(Y,Z,i,j,null);const r=rec(Y2,Z2);w+=r.win/k;s+=r.score/k;}
+    return{win:w,score:s};};
+  return rec(sq.slice(),en.slice());}
+function randomOrderSampled(sq,en,K){const ty=sq.reduce((s,q)=>s+sum(q.n),0),tz=en.reduce((s,q)=>s+sum(q.n),0);let w=0,s=0;
+  for(let k=0;k<K;k++){const pick=mulberry(9001+k);let Y=sq.slice(),Z=en.slice();
+    while(Y.length&&Z.length){[Y,Z]=step(Y,Z,Math.floor(pick()*Y.length),Math.floor(pick()*Z.length),null);}
+    const r=leaf(Y,Z,ty,tz);w+=r.win/K;s+=r.score/K;}
+  return{win:w,score:s};}
+function randomOrderMC(sq,en,rng){const ty=sq.reduce((s,q)=>s+sum(q.n),0),tz=en.reduce((s,q)=>s+sum(q.n),0);let Y=sq.slice(),Z=en.slice();
+  while(Y.length&&Z.length){[Y,Z]=step(Y,Z,Math.floor(rng()*Y.length),Math.floor(rng()*Z.length),rng);}
+  return leaf(Y,Z,ty,tz);}
 function alloc(inv,ratios,size){const stock=inv.map(l=>l.map(([t,c])=>[t,c]).sort((p,q)=>q[0]-p[0]));const out=[];let short=false;
   for(const r of ratios){const need=[Math.round(size*r[0]/100),Math.round(size*r[1]/100)];need.push(size-need[0]-need[1]);
     const comp=[[],[],[]],n=[0,0,0];
@@ -278,56 +299,62 @@ function build(D,f,ratios){const al=alloc(D.inv,ratios,D.size);
   const sq=al.sq.map((s,k)=>({n:s.n,P:per(s.comp,D.stats[k],k?f.m[k]:1)}));
   const en=D.en.map((n,k)=>({n,P:per(ec,D.es,f.e[k])}));
   return{sq,en,al};}
+function evalPlan(D,f,rs){const {sq,en}=build(D,f,rs);
+  if(D.order==="fixed")return fixedOrder(sq,en,null);
+  return D.n<=2?randomOrderExact(sq,en):randomOrderSampled(sq,en,24);}
+// Calibration replays each lost attempt exactly as it happened: who fought whom in every round
 function fitErr(D,f){let e=0;const rows=[];const nz=Math.max(...D.en.map(sum));
-  D.attempts.forEach((at,ai)=>{const {sq,en}=build(D,f,at.ratios);const ch=chain(sq,en,null);
-    for(let k=0;k<at.rounds.length;k++){const real=at.rounds[k],mod=ch.rounds[k];
-      if(!mod){e+=1;rows.push({ai,k,real,mod:null});continue;}
-      e+=((mod[0]-real[0])/D.size)**2+((mod[1]-real[1])/nz)**2+(((mod[0]>0)!==(real[0]>0))?0.5:0);rows.push({ai,k,real,mod});}
-    if(ch.rounds.length>at.rounds.length)e+=0.5*(ch.rounds.length-at.rounds.length);});
+  D.attempts.forEach((at,ai)=>{const {sq,en}=build(D,f,at.ratios);const Y=sq.map(q=>({n:q.n.slice(),P:q.P})),Z=en.map(q=>({n:q.n.slice(),P:q.P}));
+    at.rounds.forEach((rd,k)=>{const a=Y[rd.y],b=Z[rd.e];if(!a||!b){e+=1;rows.push({ai,k,rd,mod:null});return;}
+      const r=battle(a.n,a.P,b.n,b.P,null);a.n=r.a;b.n=r.b;const mod=[sum(r.a),sum(r.b)];
+      e+=((mod[0]-rd.yl)/D.size)**2+((mod[1]-rd.el)/nz)**2+(((mod[0]>0)!==(rd.yl>0))?0.5:0);rows.push({ai,k,rd,mod});});});
   return{e,rows};}
-// coordinate descent over 2N-1 strength factors (squad 1 is the reference)
 function calibrate(D,post){const N=D.n;const f={m:Array(N).fill(1),e:Array(N).fill(1)};
   if(!D.attempts.length)return{m:f.m,e:f.e,err:null,rows:[]};
-  const keys=[];for(let k=1;k<N;k++)keys.push(['m',k]);for(let k=0;k<N;k++)keys.push(['e',k]);
-  const coarse=[];for(let x=0.3;x<=2.501;x+=0.05)coarse.push(+x.toFixed(2));
-  let best=fitErr(D,f).e;const passes=8;let step=0;
-  // seed: full grid when there are at most 3 factors, otherwise a 2-D grid (all your squads x all enemy squads)
+  const used=new Set();D.attempts.forEach(a=>a.rounds.forEach(r=>used.add(r.e)));
+  const keys=[];for(let k=1;k<N;k++)keys.push(['m',k]);for(let k=0;k<N;k++)if(used.has(k))keys.push(['e',k]);
+  let best=fitErr(D,f).e;
   const seedVals=[];for(let x=0.4;x<=2.001;x+=0.1)seedVals.push(+x.toFixed(2));
-  if(keys.length<=3){const idx=keys.map(()=>0);const total=seedVals.length**keys.length;let c=0;
-    while(true){keys.forEach(([g,k],j)=>{f[g][k]=seedVals[idx[j]];});const {e}=fitErr(D,f);if(e<best){best=e;var seed=keys.map(([g,k])=>f[g][k]);}
+  if(keys.length<=3){const idx=keys.map(()=>0);const total=seedVals.length**keys.length;let c=0,seed=null;
+    while(true){keys.forEach(([g,k],j)=>{f[g][k]=seedVals[idx[j]];});const {e}=fitErr(D,f);if(e<best){best=e;seed=keys.map(([g,k])=>f[g][k]);}
       if(++c%300===0)post(0.4*c/total);let j=0;while(j<idx.length&&++idx[j]===seedVals.length){idx[j]=0;j++;}if(j===idx.length)break;}
-    if(seed)keys.forEach(([g,k],j)=>{f[g][k]=seed[j];});else keys.forEach(([g,k])=>{f[g][k]=1;});}
-  else{let bb=null;for(const ms of seedVals)for(const es of seedVals){for(let k=1;k<N;k++)f.m[k]=ms;for(let k=0;k<N;k++)f.e[k]=es;const {e}=fitErr(D,f);if(e<best){best=e;bb=[ms,es];}}
-    const [ms,es]=bb||[1,1];for(let k=1;k<N;k++)f.m[k]=ms;for(let k=0;k<N;k++)f.e[k]=es;}
-  const sweep=(vals)=>{let changed=false;for(const [g,k] of keys){let bv=f[g][k];for(const v of vals(f[g][k])){const old=f[g][k];f[g][k]=v;const {e}=fitErr(D,f);if(e<best-1e-12){best=e;bv=v;changed=true;}f[g][k]=old;}f[g][k]=bv;}return changed;};
-  for(let p=0;p<passes;p++){const ch=sweep(()=>coarse);post(++step/(passes*2));if(!ch)break;}
-  for(let p=0;p<passes;p++){const ch=sweep(c=>{const o=[];for(let d=-6;d<=6;d++){const v=+(c+d*0.01).toFixed(3);if(v>0)o.push(v);}return o;});post(Math.min(1,0.5+(++step)/(passes*2)));if(!ch)break;}
+    keys.forEach(([g,k],j)=>{f[g][k]=seed?seed[j]:1;});}
+  else{let bb=null;for(const ms of seedVals)for(const es of seedVals){for(let k=1;k<N;k++)f.m[k]=ms;for(const [g,k] of keys)if(g==='e')f.e[k]=es;const {e}=fitErr(D,f);if(e<best){best=e;bb=[ms,es];}}
+    const [ms,es]=bb||[1,1];for(let k=1;k<N;k++)f.m[k]=ms;for(const [g,k] of keys)if(g==='e')f.e[k]=es;}
+  const coarse=[];for(let x=0.3;x<=2.501;x+=0.05)coarse.push(+x.toFixed(2));
+  const sweep=vals=>{let changed=false;for(const [g,k] of keys){let bv=f[g][k];for(const v of vals(f[g][k])){const old=f[g][k];f[g][k]=v;const {e}=fitErr(D,f);if(e<best-1e-12){best=e;bv=v;changed=true;}f[g][k]=old;}f[g][k]=bv;}return changed;};
+  for(let p=0;p<8;p++){post(0.4+0.03*p);if(!sweep(()=>coarse))break;}
+  for(let p=0;p<8;p++){post(0.7+0.03*p);if(!sweep(c=>{const o=[];for(let d=-6;d<=6;d++){const v=+(c+d*0.01).toFixed(3);if(v>0)o.push(v);}return o;}))break;}
+  // enemy squads never seen in an attempt get the average of the measured ones
+  const seen=[...used];const avg=seen.length?seen.reduce((s,k)=>s+f.e[k],0)/seen.length:1;for(let k=0;k<N;k++)if(!used.has(k))f.e[k]=+avg.toFixed(3);
   const {rows}=fitErr(D,f);return{m:f.m,e:f.e,err:best,rows};}
-const GRID=(()=>{const g=[];for(let i=0;i<=100;i+=5)for(let c=0;i+c<=100;c+=5)g.push([i,c,100-i-c]);return g;})();
-const near=(r,w)=>{const o=[];for(let i=r[0]-w;i<=r[0]+w;i++)for(let c=r[1]-w;c<=r[1]+w;c++)if(i>=0&&c>=0&&i+c<=100)o.push([i,c,100-i-c]);return o;};
+const GRID5=(()=>{const g=[];for(let i=0;i<=100;i+=5)for(let c=0;i+c<=100;c+=5)g.push([i,c,100-i-c]);return g;})();
+const GRID10=GRID5.filter(r=>r[0]%10===0&&r[1]%10===0);
+const near=(r,w,s)=>{const o=[];for(let i=r[0]-w;i<=r[0]+w;i+=s)for(let c=r[1]-w;c<=r[1]+w;c+=s)if(i>=0&&c>=0&&i+c<=100)o.push([i,c,100-i-c]);return o;};
 function optimize(D,f,post){const N=D.n;const memo=new Map();
-  const exp=rs=>{const k=rs.map(r=>r.join()).join('|');if(memo.has(k))return memo.get(k);const {sq,en}=build(D,f,rs);const s=chain(sq,en,null).score;memo.set(k,s);return s;};
-  if(N<=2){
-    if(N===1){GRID.forEach(r=>exp([r]));post(0.5);}
-    else{let k=0;for(const a of GRID){for(const b of GRID)exp([a,b]);post(0.05+0.5*(++k)/GRID.length);}}
-    const top=[...memo.entries()].sort((a,b)=>b[1]-a[1])[0][0].split('|').map(s=>s.split(',').map(Number));
-    if(N===1)near(top[0],4).forEach(r=>exp([r]));
-    else{const n1=near(top[0],4),n2=near(top[1],4);n1.forEach((a,i)=>{n2.forEach(b=>exp([a,b]));post(0.55+0.2*(i+1)/n1.length);});}
+  const exp=rs=>{const k=rs.map(r=>r.join()).join('|');if(memo.has(k))return memo.get(k);const s=evalPlan(D,f,rs).score;memo.set(k,s);return s;};
+  const best=()=>[...memo.entries()].sort((a,b)=>b[1]-a[1]);
+  const parse=k=>k.split('|').map(s=>s.split(',').map(Number));
+  if(N===1){GRID5.forEach(r=>exp([r]));post(0.5);near(parse(best()[0][0])[0],4,1).forEach(r=>exp([r]));post(0.75);}
+  else if(N===2){
+    let k=0;for(const a of GRID10){for(const b of GRID10)exp([a,b]);post(0.3*(++k)/GRID10.length);}
+    const tops=best().slice(0,2).map(x=>parse(x[0]));let t=0;
+    for(const [a0,b0] of tops){const na=near(a0,10,5),nb=near(b0,10,5);for(const a of na)for(const b of nb)exp([a,b]);post(0.3+0.2*(++t)/tops.length);}
+    const [a1,b1]=parse(best()[0][0]);const na=near(a1,3,1),nb=near(b1,3,1);na.forEach((a,i)=>{nb.forEach(b=>exp([a,b]));post(0.5+0.25*(i+1)/na.length);});
   } else {
-    // three squads: start from the best common ratio, then improve one squad at a time
     let cur=[[50,20,30],[50,20,30],[50,20,30]],bs=-9;
-    GRID.forEach(r=>{const s=exp([r,r,r]);if(s>bs){bs=s;cur=[r,r,r];}});post(0.1);
-    for(let p=0;p<4;p++){let changed=false;for(let k=0;k<3;k++){for(const r of GRID){const t=cur.slice();t[k]=r;const s=exp(t);if(s>bs+1e-12){bs=s;cur=t;changed=true;}}}post(0.1+0.4*(p+1)/4);if(!changed)break;}
-    for(let p=0;p<3;p++){let changed=false;for(let k=0;k<3;k++){for(const r of near(cur[k],4)){const t=cur.slice();t[k]=r;const s=exp(t);if(s>bs+1e-12){bs=s;cur=t;changed=true;}}}post(0.5+0.25*(p+1)/3);if(!changed)break;}
+    GRID5.forEach(r=>{const s=exp([r,r,r]);if(s>bs){bs=s;cur=[r,r,r];}});post(0.1);
+    for(let p=0;p<4;p++){let changed=false;for(let k=0;k<3;k++){for(const r of GRID5){const t=cur.slice();t[k]=r;const s=exp(t);if(s>bs+1e-12){bs=s;cur=t;changed=true;}}}post(0.1+0.4*(p+1)/4);if(!changed)break;}
+    for(let p=0;p<3;p++){let changed=false;for(let k=0;k<3;k++){for(const r of near(cur[k],4,1)){const t=cur.slice();t[k]=r;const s=exp(t);if(s>bs+1e-12){bs=s;cur=t;changed=true;}}}post(0.5+0.25*(p+1)/3);if(!changed)break;}
   }
-  const ranked=[...memo.entries()].sort((a,b)=>b[1]-a[1]);
   const seen=new Set(),cands=[];
   const push=(rs,tag)=>{const k=rs.map(r=>r.join()).join('|');if(seen.has(k)){const x=cands.find(q=>q.key===k);if(tag&&x)x.tags.push(tag);return;}seen.add(k);cands.push({key:k,rs,tags:tag?[tag]:[]});};
-  ranked.slice(0,18).forEach(([k])=>push(k.split('|').map(s=>s.split(',').map(Number))));
+  best().slice(0,18).forEach(([k])=>push(parse(k)));
   push(Array.from({length:N},()=>[33,33,34]),'Quick Deploy');
   if(D.attempts.length)push(D.attempts[D.attempts.length-1].ratios,'Your last attempt');
   cands.forEach((c,i)=>{const rng=mulberry(4242);let w=0,sc=0;const {sq,en}=build(D,f,c.rs);
-    for(let t=0;t<D.runs;t++){const ch=chain(sq,en,rng);w+=ch.win;sc+=ch.score;}c.win=w/D.runs;c.score=sc/D.runs;post(0.75+0.25*(i+1)/cands.length);});
+    for(let t=0;t<D.runs;t++){const ch=D.order==="fixed"?fixedOrder(sq,en,rng):randomOrderMC(sq,en,rng);w+=ch.win;sc+=ch.score;}
+    c.win=w/D.runs;c.score=sc/D.runs;post(0.75+0.25*(i+1)/cands.length);});
   cands.sort((a,b)=>b.win-a.win||b.score-a.score);
   const {al}=build(D,f,cands[0].rs);
   return{cands,best:cands[0],alloc:al};}
@@ -350,10 +377,10 @@ const EXAMPLE={n:2,size:150000,
          [[146.8,131.5,61.7,61.9],[174.7,172.2,60.8,64.8],[174.2,167.7,54.9,58.4]]],
   es:[[133,133,60,60],[133,133,60,60],[133,133,60,60]],
   elv:8,same:true,en:[[62668,46985,47017],[62668,46985,47017],[62668,46985,47017]],
-  attempts:[{ratios:[[33,33,34],[33,33,34]],rounds:[[86809,0],[0,114721],[0,77403]]},
-            {ratios:[[50,20,30],[60,10,30]],rounds:[[78402,0],[0,103793],[0,51550]]}],
-  left:3};
-const KEY="mtl.spire.v2";
+  attempts:[{ratios:[[33,33,34],[33,33,34]],rounds:[{y:0,e:0,yl:86809,el:0},{y:1,e:1,yl:0,el:114721},{y:0,e:1,yl:0,el:77403}]},
+            {ratios:[[50,20,30],[60,10,30]],rounds:[{y:0,e:0,yl:78402,el:0},{y:1,e:1,yl:0,el:103793},{y:0,e:1,yl:0,el:51550}]}],
+  order:"random",left:3};
+const KEY="mtl.spire.v3";
 const store={get(){try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;}},set(v){try{localStorage.setItem(KEY,JSON.stringify(v));}catch(e){}}};
 const lvOpts=sel=>LV.map(l=>`<option value="${l}"${l===sel?" selected":""}>Lv ${l}</option>`).join("");
 let S=JSON.parse(JSON.stringify(EXAMPLE));let tab=0;
@@ -362,10 +389,13 @@ let S=JSON.parse(JSON.stringify(EXAMPLE));let tab=0;
 function statsTable(id){let h=`<table class="stats" id="${id}"><thead><tr><th></th>`+STATS.map(s=>`<th>${s} %</th>`).join("")+"</tr></thead><tbody>";
   for(let i=0;i<3;i++){h+=`<tr><th scope="row"><span class="dot d${i}"></span>${TYPES[i]}</th>`;for(let j=0;j<4;j++)h+=`<td><input type="number" step="0.1" inputmode="decimal" id="${id}-${i}-${j}" aria-label="${TYPES[i]} ${STATS[j]} %"></td>`;h+="</tr>";}
   return h+"</tbody></table>";}
-function roundLabel(k,N){return k<N?`<b>Round ${k+1}</b>Squad ${k+1} vs enemy ${k+1}`:`<b>Round ${k+1}</b>Survivors`;}
+const defPair=(k,N)=>k<N?{y:k,e:k}:{y:0,e:N-1};
+const sqOpts=(n,sel,who)=>Array.from({length:n},(_,i)=>`<option value="${i}"${i===sel?" selected":""}>${who} ${i+1}</option>`).join("");
 function renderForm(){const N=S.n;
   document.querySelectorAll("#nsel button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.n===N)));
-  $("nhint").textContent=N===3?"Squad 3 unlocks after clearing Radiant Spire Stage 25-10.":N===1?"One squad against one enemy squad: a single round.":"Rounds: Squad 1 vs enemy 1, Squad 2 vs enemy 2, then the survivors.";
+  $("nhint").textContent=N===3?"Squad 3 unlocks after clearing Radiant Spire Stage 25-10.":N===1?"One squad against one enemy squad: a single round.":"Two of your squads against two enemy squads, up to 3 rounds.";
+  document.querySelectorAll("#osel button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.o===S.order)));
+  $("ohint").textContent=S.order==="fixed"?"Assumes Squad 1 meets enemy 1 and Squad 2 meets enemy 2 first, then the survivors.":"Recommended. The game changes who fights whom, so the plan is averaged over every possible order.";
   $("size").value=S.size;
   // inventory
   let h='<span class="h"></span><span class="h">Highest level</span><span class="h">Next level</span>';
@@ -390,8 +420,10 @@ function renderAttempts(){const N=S.n,R=2*N-1;
     let r=`<div class="ratios"><span class="h"></span><span class="h">Inf %</span><span class="h">Cav %</span><span class="h">Arc %</span>`;
     for(let k=0;k<N;k++){r+=`<span class="rlab"><b>Squad ${k+1}</b></span>`+[0,1,2].map(t=>`<input type="number" min="0" max="100" step="1" inputmode="numeric" id="at${ai}-r${k}-${t}" value="${(a.ratios[k]||[33,33,34])[t]}" aria-label="Attempt ${ai+1} squad ${k+1} ${TYPES[t]} %">`).join("");}
     r+=`</div><p class="inline-err" id="at${ai}-err" hidden></p>`;
-    let rs=`<div class="rounds"><span></span><span class="h hint">Your troops left</span><span class="h hint">Enemy troops left</span>`;
-    for(let k=0;k<R;k++){const v=a.rounds[k]||["",""];rs+=`<span class="rlab">${roundLabel(k,N)}</span><input type="number" min="0" step="1" inputmode="numeric" id="at${ai}-y${k}" value="${v[0]}" aria-label="Round ${k+1} your troops left"><input type="number" min="0" step="1" inputmode="numeric" id="at${ai}-e${k}" value="${v[1]}" aria-label="Round ${k+1} enemy troops left">`;}
+    let rs=`<div class="rounds"><span></span><span class="h hint">Your side</span><span class="h hint">Enemy side</span>`;
+    for(let k=0;k<R;k++){const v=a.rounds[k]||{...defPair(k,N),yl:"",el:""};
+      rs+=`<span class="rlab"><b>Round ${k+1}</b>who fought</span><select id="at${ai}-ys${k}" aria-label="Round ${k+1} your squad">${sqOpts(N,v.y,"Squad")}</select><select id="at${ai}-es${k}" aria-label="Round ${k+1} enemy squad">${sqOpts(N,v.e,"Enemy")}</select>`
+        +`<span class="rlab">troops left</span><input type="number" min="0" step="1" inputmode="numeric" id="at${ai}-y${k}" value="${v.yl}" aria-label="Round ${k+1} your troops left"><input type="number" min="0" step="1" inputmode="numeric" id="at${ai}-e${k}" value="${v.el}" aria-label="Round ${k+1} enemy troops left">`;}
     return `<div class="attempt"><div class="attempt-h"><h3>Lost attempt ${ai+1}</h3><button type="button" class="btn btn-quiet" data-del="${ai}">Remove</button></div>
       <p class="hint">Ratios you used</p>${r}<p class="hint">Round results (leave later rounds empty if they didn't happen)</p>${rs}</div></div>`;}).join("")
     ||'<p class="hint">No attempts yet. The plan will assume all squads have equally strong heroes, which is often wrong. After your first loss, add it here.</p>';}
@@ -408,15 +440,16 @@ function readForm(){const N=S.n;
   for(let k=0;k<cols;k++)for(let i=0;i<3;i++)S.en[k][i]=Math.max(0,Math.round(num(`en-${k}-${i}`)||0));
   if(cols===1)for(let k=1;k<3;k++)S.en[k]=S.en[0].slice();
   S.attempts=S.attempts.map((a,ai)=>{const ratios=[];for(let k=0;k<N;k++)ratios.push([0,1,2].map(t=>num(`at${ai}-r${k}-${t}`)||0));
-    const rounds=[];for(let k=0;k<2*N-1;k++){const y=num(`at${ai}-y${k}`),e=num(`at${ai}-e${k}`);if(y===null&&e===null)break;rounds.push([y||0,e||0]);}
+    const rounds=[];for(let k=0;k<2*N-1;k++){const y=num(`at${ai}-y${k}`),e=num(`at${ai}-e${k}`);if(y===null&&e===null)break;rounds.push({y:+$(`at${ai}-ys${k}`).value,e:+$(`at${ai}-es${k}`).value,yl:y||0,el:e||0});}
     return{ratios,rounds};});
   S.left=Math.max(1,Math.round(num("left")||1));}
 function save(){store.set({...S,example:!$("ex").hidden,tab});}
 
 /* ---------- events ---------- */
 $("nsel").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;readForm();const n=+b.dataset.n;if(n===S.n)return;
-  S.n=n;S.attempts.forEach(a=>{while(a.ratios.length<n)a.ratios.push([33,33,34]);a.ratios.length=n;a.rounds.length=Math.min(a.rounds.length,2*n-1);});
+  S.n=n;S.attempts.forEach(a=>{while(a.ratios.length<n)a.ratios.push([33,33,34]);a.ratios.length=n;a.rounds.length=Math.min(a.rounds.length,2*n-1);a.rounds.forEach(r=>{if(r.y>=n)r.y=0;if(r.e>=n)r.e=0;});});
   renderForm();clearResults();save();});
+$("osel").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;readForm();S.order=b.dataset.o;renderForm();clearResults();save();});
 $("stabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;readForm();tab=b.dataset.t==="e"?"e":+b.dataset.t;renderForm();});
 $("same").addEventListener("change",()=>{readForm();renderForm();});
 $("attempts").addEventListener("click",ev=>{const b=ev.target.closest("[data-del]");if(!b)return;readForm();S.attempts.splice(+b.dataset.del,1);renderAttempts();save();});
@@ -440,13 +473,13 @@ function validate(){const N=S.n,bad=[];
 let worker=null;
 function run(scroll){readForm();const bad=validate();$("err").hidden=!bad.length;$("err").innerHTML=bad.join("<br>");if(bad.length){$("status").textContent="Fix the highlighted fields first.";return;}
   save();
-  const D={n:S.n,size:S.size,inv:S.inv,stats:S.stats.slice(0,S.n),es:S.es,elv:S.elv,en:S.en.slice(0,S.n),attempts:S.attempts,runs:+$("runs").value};
+  const D={n:S.n,size:S.size,inv:S.inv,stats:S.stats.slice(0,S.n),es:S.es,elv:S.elv,en:S.en.slice(0,S.n),attempts:S.attempts,runs:+$("runs").value,order:S.order||"random"};
   if(worker)worker.terminate();
   worker=new Worker(URL.createObjectURL(new Blob([$("engine-src").textContent],{type:"text/javascript"})));
   $("go").disabled=true;$("status").textContent=D.attempts.length?"Measuring hero strength from your attempts…":"Planning…";
   worker.onmessage=ev=>{const m=ev.data;
     if(m.type==="progress")$("prog").style.width=(m.p*100).toFixed(1)+"%";
-    else if(m.type==="calib"){$("status").textContent="Testing every combination of ratios…";renderCalib(m.f,D);}
+    else if(m.type==="calib"){$("status").textContent=D.order==="random"?"Testing every combination of ratios over every fight order (a few seconds)…":"Testing every combination of ratios…";renderCalib(m.f,D);}
     else if(m.type==="done"){renderPlan(m.o,D);$("go").disabled=false;$("status").textContent="Done. Your plan is ready.";setTimeout(()=>$("prog").style.width="0",600);
       if(scroll&&window.matchMedia("(max-width:960px)").matches)$("plancard").scrollIntoView({behavior:"smooth",block:"start"});}
     else if(m.type==="error"){$("go").disabled=false;$("status").textContent="Something went wrong: "+m.msg;}};
@@ -459,7 +492,7 @@ function renderPlan(o,D){const b=o.best,N=D.n,left=S.left,over=1-Math.pow(1-b.wi
   $("hero").innerHTML=b.rs.map((r,k)=>`<div class="sq"><p class="label">Squad ${k+1} · Inf / Cav / Arc</p>${ratioHTML(r)}</div>`).join("");
   $("chips").innerHTML=`<span class="chip ${cls(b.win)}">${pct(b.win)} win chance per attempt</span><span class="chip ${cls(over)}">${pct(over)} over ${left} attempt${left>1?"s":""}</span>`;
   const qd=o.cands.find(c=>c.tags.includes("Quick Deploy"));
-  $("advice").textContent=b.win<0.03?"No ratio gives a real chance on this stage. Save your attempts and strengthen Squad 1 (heroes, gear), since it fights the most rounds."
+  $("advice").textContent=b.win<0.03?"No ratio gives a real chance on this stage. Save your attempts and strengthen your strongest squad (heroes, gear): it usually has to win more than one round."
     :b.win<0.15?`A long shot, but ${qd&&qd.win<b.win?`far better than Quick Deploy (${pct(qd.win)}). `:""}Worth your remaining attempts if you have them.`
     :`A good chance${qd?` (Quick Deploy: ${pct(qd.win)})`:""}. Use your attempts with this plan.`;
   let h=`<thead><tr><th>Troop</th>${Array.from({length:N},(_,k)=>`<th>Squad ${k+1}</th>`).join("")}</tr></thead><tbody>`;
@@ -479,8 +512,8 @@ function renderCalib(f,D){
   $("factors").innerHTML=kv;
   const nz=Math.max(...D.en.map(x=>x[0]+x[1]+x[2]));let worst=0;
   let h="<thead><tr><th>Round</th><th>Real</th><th>Model</th></tr></thead><tbody>";
-  f.rows.forEach(r=>{const idx=r.real[0]>0?0:1,m=r.mod?r.mod[idx]:null,sz=idx===0?D.size:nz;if(m!==null)worst=Math.max(worst,Math.abs(m-r.real[idx])/sz);
-    h+=`<tr><td>Attempt ${r.ai+1} · R${r.k+1} <span class="hint">${idx?"enemy":"you"} left</span></td><td>${fmt(r.real[idx])}</td><td>${m===null?"–":fmt(m)}</td></tr>`;});
+  f.rows.forEach(r=>{const real=[r.rd.yl,r.rd.el],idx=real[0]>0?0:1,m=r.mod?r.mod[idx]:null,sz=idx===0?D.size:nz;if(m!==null)worst=Math.max(worst,Math.abs(m-real[idx])/sz);
+    h+=`<tr><td>A${r.ai+1} · R${r.k+1} <span class="hint">S${r.rd.y+1} vs E${r.rd.e+1}, ${idx?"enemy":"you"} left</span></td><td>${fmt(real[idx])}</td><td>${m===null?"–":fmt(m)}</td></tr>`;});
   $("fit").innerHTML=h+"</tbody>";
   const g=worst*100;
   $("fitnote").textContent=g<5?`Good fit: the model matches your real rounds to within ${g.toFixed(1)}%. The plan can be trusted.`
@@ -489,7 +522,7 @@ function renderCalib(f,D){
 
 /* ---------- boot ---------- */
 const saved=store.get();
-if(saved&&saved.inv&&saved.n){S=saved;tab=saved.tab??0;$("ex").hidden=!saved.example;if(!saved.example)$("guide").open=false;}
+if(saved&&saved.inv&&saved.n){S=saved;S.order=S.order||"random";tab=saved.tab??0;$("ex").hidden=!saved.example;if(!saved.example)$("guide").open=false;}
 renderForm();run(false);
 })();
 </script>
