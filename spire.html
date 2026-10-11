@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radiant Spire Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0}[hidden]{display:none!important}
+:root{
+  --bg:#EDF1F2; --surface:#FFFFFF; --surface-2:#E2E8EA; --ink:#15202A; --muted:#566570; --line:#CAD3D7;
+  --accent:#0E7C86; --accent-soft:#D3ECEE; --accent-ink:#FFFFFF;
+  --loss:#B5483A; --loss-soft:#F5DEDA; --warn:#94670A; --warn-soft:#F4E8CF;
+  --inf:#4B62B0; --cav:#B0751A; --arc:#3A8753;
+  --display:"Alegreya SC","Palatino Linotype",Georgia,serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F161B; --surface:#172128; --surface-2:#22303A; --ink:#E4EBEE; --muted:#93A3AC; --line:#2E3D47;
+    --accent:#3DB5BF; --accent-soft:#163A3F; --accent-ink:#06191B;
+    --loss:#E27464; --loss-soft:#3D2320; --warn:#E0B04F; --warn-soft:#3A2F17;
+    --inf:#8298E3; --cav:#E0A547; --arc:#6CC08A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F161B; --surface:#172128; --surface-2:#22303A; --ink:#E4EBEE; --muted:#93A3AC; --line:#2E3D47;
+  --accent:#3DB5BF; --accent-soft:#163A3F; --accent-ink:#06191B;
+  --loss:#E27464; --loss-soft:#3D2320; --warn:#E0B04F; --warn-soft:#3A2F17;
+  --inf:#8298E3; --cav:#E0A547; --arc:#6CC08A;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;padding:0 16px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 56px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.1}
+h2{font-size:21px} h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.lede{color:var(--muted);max-width:70ch;margin-top:8px}
+.label{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.back{display:inline-block;margin-bottom:14px;font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:24px;margin-top:24px;align-items:start}
+@media (max-width:960px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel,.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.step{display:flex;align-items:baseline;gap:10px}
+.step .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:600 13px/24px var(--mono);text-align:center}
+.hint{font-size:12.5px;color:var(--muted)}
+.err{font-size:12.5px;color:var(--loss)}
+hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 90px;min-width:0}
+.field label{font-size:12.5px;color:var(--muted)}
+input[type=number],select{font:inherit;font-family:var(--mono);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%;min-width:0}
+input[type=number]{-moz-appearance:textfield}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+table{border-collapse:collapse;width:100%}
+.stats th,.stats td{padding:3px}
+.stats thead th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding-bottom:6px}
+.stats tbody th{text-align:left;font-weight:500;font-size:13.5px;white-space:nowrap;padding-right:6px}
+.stats input{padding:6px 5px;font-size:13.5px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.d0{background:var(--inf)}.d1{background:var(--cav)}.d2{background:var(--arc)}
+.inv{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 8px;align-items:center}
+.inv .h{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pair{display:flex;gap:6px}
+.pair select{flex:0 0 74px}
+.inv .pair{flex-direction:column;gap:4px}
+.inv .pair select{flex:none}
+.stats input{font-size:13px}
+@media (max-width:520px){.stats input{padding:6px 3px;font-size:12.5px}}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;align-self:flex-start}
+.tabs button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13.5px;padding:6px 14px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);font-weight:600}
+.attempt{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.attempt input{background:var(--surface)}
+.attempt-h{display:flex;justify-content:space-between;align-items:center}
+.rounds{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 8px;align-items:center}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:8px;padding:11px 16px;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--accent);color:var(--accent-ink);font-size:15.5px}
+.btn-primary:disabled{opacity:.6;cursor:progress}
+.btn-quiet{background:transparent;color:var(--muted);border-color:var(--line);font-weight:500;font-size:13px;padding:6px 11px}
+.btn-quiet:hover{color:var(--ink);border-color:var(--ink)}
+.progress{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+.ex{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.results{display:flex;flex-direction:column;gap:20px;min-width:0}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sq{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--bg)}
+.ratio{font-family:var(--mono);font-size:clamp(30px,5vw,42px);font-weight:500;line-height:1.05;margin-top:6px;display:flex;gap:.12em;flex-wrap:wrap}
+.ratio .s{color:var(--line)} .ratio .i{color:var(--inf)} .ratio .c{color:var(--cav)} .ratio .a{color:var(--arc)}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:10px;background:var(--surface-2)}
+.bar i{display:block;height:100%}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;border-radius:999px;padding:4px 11px}
+.good{background:var(--accent-soft);color:var(--accent)} .mid{background:var(--warn-soft);color:var(--warn)} .bad{background:var(--loss-soft);color:var(--loss)}
+.tbl th,.tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-size:13.5px}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tbl td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tbl td:first-child{font-family:var(--sans)}
+.tbl tr.tot td{font-weight:600}
+.scroll{overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--mono)}
+.notes{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;font-size:14px;color:var(--muted)}
+.notes h3{color:var(--ink);margin-bottom:6px}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+@media (max-width:520px){.hero{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← Mystic Trial Ratio Lab</a>
+  <p class="label">Kingshot · Mystic Trial · Sunday</p>
+  <h1>Radiant Spire Planner</h1>
+  <p class="lede">Sunday is two of your squads against two enemy squads, fought in rounds: Squad 1 vs enemy 1, Squad 2 vs enemy 2, then the survivors fight on. This planner splits your troops between both squads and finds the pair of ratios that wins most often. Hero skills can't be read from the game, so it learns their effect from the round results of attempts you already lost.</p>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off" novalidate>
+      <div class="step"><span class="n">1</span><h2>Your troops</h2><span class="ex" id="ex">Example numbers</span></div>
+      <div class="row">
+        <div class="field"><label for="size">Squad size</label><input type="number" id="size" min="1" step="1"></div>
+      </div>
+      <div class="inv" id="inv"></div>
+      <p class="hint">Use the counts from the squad's Edit Formation screen (for example Elite VIII = level 8, Heroic VI = level 6). Squad 1 always gets your highest level first.</p>
+      <hr>
+
+      <div class="step"><span class="n">2</span><h2>Your squads' stats</h2></div>
+      <div class="tabs" role="group" aria-label="Squad"><button type="button" data-t="s1" aria-pressed="true">Squad 1</button><button type="button" data-t="s2" aria-pressed="false">Squad 2</button></div>
+      <table class="stats" id="s1"></table>
+      <table class="stats" id="s2" hidden></table>
+      <p class="hint">Bonus % from a Radiant Spire battle report, left column. Each squad has its own numbers because its heroes differ.</p>
+      <hr>
+
+      <div class="step"><span class="n">3</span><h2>Enemy</h2></div>
+      <div class="row"><div class="field"><label for="elv">Enemy troop level</label><select id="elv"></select></div></div>
+      <div id="ecounts"></div>
+      <table class="stats" id="es"></table>
+      <hr>
+
+      <div class="step"><span class="n">4</span><h2>Lost attempts</h2></div>
+      <p class="hint">Optional, but this is what makes the plan accurate. For each attempt, enter the ratios you used and the round summary (Battle Report → stage → the rounds screen). Leave round 3 empty if there was none.</p>
+      <div id="attempts"></div>
+      <button type="button" class="btn btn-quiet" id="add" style="align-self:flex-start">+ Add attempt</button>
+      <hr>
+      <div class="row" style="align-items:flex-end">
+        <div class="field"><label for="runs">Replays per contender</label><select id="runs"><option value="200">200 (fast)</option><option value="400" selected>400</option><option value="1000">1,000 (precise)</option></select></div>
+        <div class="field"><label for="left">Attempts you have left</label><input type="number" id="left" min="1" max="10" step="1" value="3"></div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="go">Plan my Sunday</button>
+      <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+      <div class="row" style="justify-content:space-between;align-items:center"><p class="hint" id="status">Ready.</p><button type="button" class="btn btn-quiet" id="reset">Load example</button></div>
+      <p class="err" id="err" hidden></p>
+    </form>
+
+    <div class="results" id="results">
+      <div class="card">
+        <div class="step"><h2>Best plan</h2></div>
+        <div class="hero" id="hero"><div class="sq"><p class="label">Squad 1</p><div class="ratio">–</div></div><div class="sq"><p class="label">Squad 2</p><div class="ratio">–</div></div></div>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="card">
+        <h2>Set your troops like this</h2>
+        <div class="scroll"><table class="tbl" id="plan"></table></div>
+        <p class="hint">Set Squad 1 first, then Squad 2. Keep the same heroes as in the attempts you entered: the calibration belongs to those heroes.</p>
+      </div>
+      <div class="card">
+        <h2>Compared</h2>
+        <div class="scroll"><table class="tbl" id="cmp"></table></div>
+      </div>
+      <div class="card">
+        <h2>Calibration</h2>
+        <dl class="kv" id="factors"></dl>
+        <div class="scroll"><table class="tbl" id="fit"></table></div>
+        <p class="hint" id="fitnote"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <section><h3>How it plans</h3>
+      <p>It simulates the full Sunday fight (rounds 1, 2 and the survivors' rounds) for every pair of ratios at 5% steps, refines the best area at 1% steps, then replays the top contenders hundreds of times with the random cavalry and archer procs. Each contender gets the same random rolls, so the ranking compares plans, not luck.</p></section>
+    <section><h3>How it calibrates</h3>
+      <p>The troop formula can't see hero skills. Instead it finds three strength factors (your Squad 2 relative to Squad 1, and each enemy squad) that best reproduce the troops left after every round of your lost attempts. On stage 8-10 this reproduced six real rounds to within about 3%.</p></section>
+    <section><h3>Limits</h3>
+      <ul><li>Level 7 and 8 base stats are estimated between the known level 6 and level 9 values.</li>
+      <li>The calibration only holds for the same heroes and the same stage.</li>
+      <li>Community reverse-engineered formula, not official.</li></ul></section>
+  </div>
+</div>
+
+<script id="engine-src" type="text/plain">
+const G=Math.cbrt(400/243);
+const KNOWN={6:[243,730,730,243,974,183],9:[400,1200,1200,400,1600,300],10:[472,1416,1416,472,1888,354],11:[566,1699,1699,566,2266,390]};
+function tb(t){if(KNOWN[t])return KNOWN[t];const I=243*Math.pow(G,t-6);return[I,3*I,3*I,I,4*I,0.75*I];}
+function per(comp,st,m){const att=[],def=[];
+  for(let i=0;i<3;i++){let n=0,a=0,h=0;for(const [t,c] of comp[i]){const b=tb(t);n+=c;a+=c*b[2*i];h+=c*b[2*i+1];}
+    if(n===0){const b=tb(comp[i].length?comp[i][0][0]:8);a=b[2*i];h=b[2*i+1];n=1;}
+    a/=n;h/=n;const s=st[i];att.push(a*(1+s[0]/100)*10*(1+s[2]/100)/100*m);def.push(10*(1+s[1]/100)*h*(1+s[3]/100)/100);}
+  return{att,def};}
+function hit(n,att,tn,tdef,am,rng,out){
+  const fr=tn[0]>0?0:tn[1]>0?1:tn[2]>0?2:-1;if(fr<0)return;
+  for(let i=0;i<3;i++){if(n[i]<=0)continue;const b=Math.sqrt(n[i]*am)*att[i]/100;let mult=1;
+    if(i===2)mult=rng?(rng()<0.1?2:1):1.1;
+    if(i===1&&fr!==2&&tn[2]>0){if(rng)add(i,rng()<0.2?2:fr,b,mult,1);else{add(i,fr,b,mult,0.8);add(i,2,b,mult,0.2);}}else add(i,fr,b,mult,1);}
+  function add(i,t,b,m,w){const c=(i===0&&t===1)||(i===1&&t===2)||(i===2&&t===0)?1.1:1;let d=b/tdef[t]*c*m*w;if(rng)d=Math.ceil(d);out[t]+=d;}}
+const sum=x=>x[0]+x[1]+x[2];
+function battle(a0,A,b0,B,rng){const a=a0.slice(),b=b0.slice(),am=Math.min(sum(a),sum(b));let r=0;
+  while(sum(a)>0&&sum(b)>0&&r<5000){const da=[0,0,0],db=[0,0,0];hit(a,A.att,b,B.def,am,rng,db);hit(b,B.att,a,A.def,am,rng,da);
+    for(let k=0;k<3;k++){a[k]-=da[k];if(a[k]<1)a[k]=0;b[k]-=db[k];if(b[k]<1)b[k]=0;}r++;}
+  return{a,b};}
+function chain(sq,en,rng){const rounds=[];
+  const y=[],z=[];
+  for(let k=0;k<2;k++){const r=battle(sq[k].n,sq[k].P,en[k].n,en[k].P,rng);rounds.push([sum(r.a),sum(r.b)]);
+    if(sum(r.a)>0)y.push({n:r.a,P:sq[k].P});if(sum(r.b)>0)z.push({n:r.b,P:en[k].P});}
+  while(y.length&&z.length){const r=battle(y[0].n,y[0].P,z[0].n,z[0].P,rng);rounds.push([sum(r.a),sum(r.b)]);
+    if(sum(r.a)>0){y[0].n=r.a;z.shift();}else{y.shift();if(sum(r.b)>0)z[0].n=r.b;else z.shift();}}
+  const win=!z.length&&y.length?1:0;const yl=y.reduce((s,q)=>s+sum(q.n),0),zl=z.reduce((s,q)=>s+sum(q.n),0);
+  return{win,rounds,score:win?yl/(sum(sq[0].n)+sum(sq[1].n)):-zl/(sum(en[0].n)+sum(en[1].n))};}
+function alloc(inv,r1,r2,size){const stock=inv.map(l=>l.map(([t,c])=>[t,c]).sort((p,q)=>q[0]-p[0]));const out=[];let short=false;
+  for(const r of [r1,r2]){const need=[Math.round(size*r[0]/100),Math.round(size*r[1]/100)];need.push(size-need[0]-need[1]);
+    const comp=[[],[],[]],n=[0,0,0];
+    for(let i=0;i<3;i++){let left=need[i];for(const s of stock[i]){if(left<=0)break;const take=Math.min(left,s[1]);if(take>0){comp[i].push([s[0],take]);s[1]-=take;left-=take;n[i]+=take;}}if(left>0)short=true;}
+    out.push({n,comp});}
+  return{sq:out,short};}
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function build(D,f,r1,r2){const al=alloc(D.inv,r1,r2,D.size);
+  const sq=[{n:al.sq[0].n,P:per(al.sq[0].comp,D.s1,1)},{n:al.sq[1].n,P:per(al.sq[1].comp,D.s2,f.m2)}];
+  const ec=[[[D.elv,1]],[[D.elv,1]],[[D.elv,1]]];
+  const en=[{n:D.ea,P:per(ec,D.es,f.mA)},{n:D.eb,P:per(ec,D.es,f.mB)}];
+  return{sq,en,al};}
+function fitErr(D,f){let e=0;const rows=[];
+  for(const at of D.attempts){const {sq,en}=build(D,f,at.r1,at.r2);const ch=chain(sq,en,null);
+    const esz=[sum(D.ea),sum(D.eb)];
+    for(let k=0;k<at.rounds.length;k++){const real=at.rounds[k],mod=ch.rounds[k];
+      if(!mod){e+=1;rows.push({k,real,mod:null});continue;}
+      const nz=Math.max(esz[0],esz[1]);
+      e+=((mod[0]-real[0])/D.size)**2+((mod[1]-real[1])/nz)**2+(((mod[0]>0)!==(real[0]>0))?0.5:0);
+      rows.push({k,real,mod});}
+    if(ch.rounds.length>at.rounds.length)e+=0.5*(ch.rounds.length-at.rounds.length);}
+  return{e,rows};}
+function calibrate(D,post){if(!D.attempts.length)return{m2:1,mA:1,mB:1,rows:[],e:null};
+  let best={e:1e9};const R=[];for(let x=0.4;x<=2.001;x+=0.1)R.push(+x.toFixed(2));let c=0;const tot=R.length**3;
+  for(const m2 of R)for(const mA of R)for(const mB of R){const {e}=fitErr(D,{m2,mA,mB});if(e<best.e)best={e,m2,mA,mB};if(++c%400===0)post(c/tot);}
+  const b0={...best};
+  for(let i=-5;i<=5;i++)for(let j=-5;j<=5;j++)for(let k=-5;k<=5;k++){const f={m2:+(b0.m2+i*0.02).toFixed(3),mA:+(b0.mA+j*0.02).toFixed(3),mB:+(b0.mB+k*0.02).toFixed(3)};
+    if(f.m2<=0||f.mA<=0||f.mB<=0)continue;const {e}=fitErr(D,f);if(e<best.e)best={e,...f};}
+  const {rows}=fitErr(D,best);return{...best,rows};}
+function optimize(D,f,post){
+  const grid=[];for(let i=0;i<=100;i+=5)for(let c=0;i+c<=100;c+=5)grid.push([i,c,100-i-c]);
+  const exp=(r1,r2)=>{const {sq,en}=build(D,f,r1,r2);return chain(sq,en,null).score;};
+  let res=[];let k=0;const tot=grid.length*grid.length;
+  for(const r1 of grid){for(const r2 of grid){res.push([exp(r1,r2),r1,r2]);}k+=grid.length;post(0.05+0.55*k/tot);}
+  res.sort((a,b)=>b[0]-a[0]);
+  const near=r=>{const o=[];for(let i=r[0]-4;i<=r[0]+4;i++)for(let c=r[1]-4;c<=r[1]+4;c++)if(i>=0&&c>=0&&i+c<=100)o.push([i,c,100-i-c]);return o;};
+  const fine=[];const [_,b1,b2]=res[0];const n1=near(b1),n2=near(b2);let kk=0;
+  for(const r1 of n1){for(const r2 of n2)fine.push([exp(r1,r2),r1,r2]);kk++;post(0.6+0.15*kk/n1.length);}
+  fine.sort((a,b)=>b[0]-a[0]);
+  const key=(a,b)=>a.join()+'|'+b.join();const seen=new Set();const cands=[];
+  const push=(r1,r2,tag)=>{const kq=key(r1,r2);if(seen.has(kq)){const x=cands.find(q=>key(q.r1,q.r2)===kq);if(tag&&x)x.tags.push(tag);return;}seen.add(kq);cands.push({r1,r2,tags:tag?[tag]:[]});};
+  fine.slice(0,14).forEach(x=>push(x[1],x[2]));res.slice(0,6).forEach(x=>push(x[1],x[2]));
+  push([33,33,34],[33,33,34],'Quick Deploy');
+  if(D.attempts.length){const l=D.attempts[D.attempts.length-1];push(l.r1,l.r2,'Your last attempt');}
+  cands.forEach((c,i)=>{const rng=mulberry(4242);let w=0,sc=0;const {sq,en}=build(D,f,c.r1,c.r2);
+    for(let t=0;t<D.runs;t++){const ch=chain(sq,en,rng);w+=ch.win;sc+=ch.score;}c.win=w/D.runs;c.score=sc/D.runs;c.exp=exp(c.r1,c.r2);post(0.75+0.25*(i+1)/cands.length);});
+  cands.sort((a,b)=>b.win-a.win||b.score-a.score);
+  const best=cands[0];const {al}=build(D,f,best.r1,best.r2);
+  return{cands,best,alloc:al};}
+self.onmessage=e=>{const D=e.data;const post=p=>self.postMessage({type:'progress',p});
+  try{const f=calibrate(D,p=>post(0.05*p));self.postMessage({type:'calib',f});const o=optimize(D,f,post);self.postMessage({type:'done',f,o});}
+  catch(err){self.postMessage({type:'error',msg:String(err&&err.message||err)});}};
+</script>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const TYPES=["Infantry","Cavalry","Archers"],STATS=["Atk","Def","Leth","HP"],LV=[5,6,7,8,9,10,11];
+const fmt=n=>Math.round(n).toLocaleString("en-GB");
+const pct=x=>(x*100).toFixed(1)+"%";
+const EXAMPLE={size:150000,
+  inv:[[[8,52627],[6,250000]],[[8,49290],[6,250000]],[[8,51799],[6,250000]]],
+  s1:[[181.5,166.2,65.5,79.8],[204.8,202.3,87.1,69.8],[158.4,151.9,74.6,60.8]],
+  s2:[[146.8,131.5,61.7,61.9],[174.7,172.2,60.8,64.8],[174.2,167.7,54.9,58.4]],
+  elv:8, ea:[62668,46985,47017], eb:[62668,46985,47017], es:[[133,133,60,60],[133,133,60,60],[133,133,60,60]],
+  attempts:[{r1:[33,33,34],r2:[33,33,34],rounds:[[86809,0],[0,114721],[0,77403]]},
+            {r1:[50,20,30],r2:[60,10,30],rounds:[[78402,0],[0,103793],[0,51550]]}],
+  left:3};
+const store={get(){try{return JSON.parse(localStorage.getItem("mtl.spire.v1"));}catch(e){return null;}},set(v){try{localStorage.setItem("mtl.spire.v1",JSON.stringify(v));}catch(e){}}};
+const lvOpts=sel=>LV.map(l=>`<option value="${l}"${l===sel?" selected":""}>Lv ${l}</option>`).join("");
+
+function statsTable(id){let h="<thead><tr><th></th>"+STATS.map(s=>`<th>${s} %</th>`).join("")+"</tr></thead><tbody>";
+  for(let i=0;i<3;i++){h+=`<tr><th scope="row"><span class="dot d${i}"></span>${TYPES[i]}</th>`;for(let j=0;j<4;j++)h+=`<td><input type="number" step="0.1" inputmode="decimal" id="${id}-${i}-${j}" aria-label="${TYPES[i]} ${STATS[j]}"></td>`;h+="</tr>";}
+  $(id).innerHTML=h+"</tbody>";}
+statsTable("s1");statsTable("s2");statsTable("es");
+$("elv").innerHTML=lvOpts(8);
+let h='<span class="h"></span><span class="h">Highest level</span><span class="h">Next level</span>';
+for(let i=0;i<3;i++)h+=`<span><span class="dot d${i}"></span>${TYPES[i]}</span><div class="pair"><select id="iv-${i}-0-l" aria-label="${TYPES[i]} highest level">${lvOpts(8)}</select><input type="number" id="iv-${i}-0-n" min="0" step="1" aria-label="${TYPES[i]} count"></div><div class="pair"><select id="iv-${i}-1-l" aria-label="${TYPES[i]} next level">${lvOpts(6)}</select><input type="number" id="iv-${i}-1-n" min="0" step="1" aria-label="${TYPES[i]} count"></div>`;
+$("inv").innerHTML=h;
+let e='<div class="inv"><span class="h"></span><span class="h">Enemy squad 1</span><span class="h">Enemy squad 2</span>';
+for(let i=0;i<3;i++)e+=`<span><span class="dot d${i}"></span>${TYPES[i]}</span><input type="number" id="ea-${i}" min="0" step="1" aria-label="Enemy squad 1 ${TYPES[i]}"><input type="number" id="eb-${i}" min="0" step="1" aria-label="Enemy squad 2 ${TYPES[i]}">`;
+$("ecounts").innerHTML=e+"</div>";
+document.querySelector(".tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
+  document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));$("s1").hidden=b.dataset.t!=="s1";$("s2").hidden=b.dataset.t!=="s2";});
+
+let attempts=[];
+function attemptHTML(a,idx){const r=(p,v)=>[0,1,2].map(k=>`<input type="number" min="0" max="100" step="1" id="at${idx}-${p}-${k}" value="${v[k]}" aria-label="Attempt ${idx+1} ${p} ${TYPES[k]} %">`).join("");
+  let rs="";for(let k=0;k<3;k++){const v=a.rounds[k]||["",""];rs+=`<span class="hint">Round ${k+1}</span><input type="number" min="0" step="1" id="at${idx}-y${k}" value="${v[0]}" aria-label="Round ${k+1} your troops left"><input type="number" min="0" step="1" id="at${idx}-e${k}" value="${v[1]}" aria-label="Round ${k+1} enemy troops left">`;}
+  return `<div class="attempt"><div class="attempt-h"><h3>Attempt ${idx+1}</h3><button type="button" class="btn btn-quiet" data-del="${idx}">Remove</button></div>
+  <div><p class="hint" style="margin-bottom:4px">Squad 1 ratio (Inf / Cav / Arc %)</p><div class="pair">${r("r1",a.r1)}</div></div>
+  <div><p class="hint" style="margin-bottom:4px">Squad 2 ratio (Inf / Cav / Arc %)</p><div class="pair">${r("r2",a.r2)}</div></div>
+  <div class="rounds"><span></span><span class="hint">Your troops left</span><span class="hint">Enemy troops left</span>${rs}</div></div>`;}
+function renderAttempts(){$("attempts").innerHTML=attempts.map(attemptHTML).join("")||'<p class="hint">No attempts entered: the plan will assume equal hero strength on all squads.</p>';}
+function readAttempts(){return attempts.map((_,i)=>{const g=id=>{const v=$(id).value.trim();return v===""?null:Number(v);};
+  const r1=[0,1,2].map(k=>g(`at${i}-r1-${k}`)||0),r2=[0,1,2].map(k=>g(`at${i}-r2-${k}`)||0);const rounds=[];
+  for(let k=0;k<3;k++){const y=g(`at${i}-y${k}`),e=g(`at${i}-e${k}`);if(y===null&&e===null)break;rounds.push([y||0,e||0]);}
+  return{r1,r2,rounds};});}
+$("attempts").addEventListener("click",ev=>{const b=ev.target.closest("[data-del]");if(!b)return;attempts=readAttempts();attempts.splice(+b.dataset.del,1);renderAttempts();});
+$("add").addEventListener("click",()=>{attempts=readAttempts();attempts.push({r1:[33,33,34],r2:[33,33,34],rounds:[]});renderAttempts();});
+
+function fill(d){$("size").value=d.size;
+  for(let i=0;i<3;i++){for(let k=0;k<2;k++){const v=d.inv[i][k]||[k?6:8,0];$(`iv-${i}-${k}-l`).value=v[0];$(`iv-${i}-${k}-n`).value=v[1];}
+    $("ea-"+i).value=d.ea[i];$("eb-"+i).value=d.eb[i];
+    for(let j=0;j<4;j++){$(`s1-${i}-${j}`).value=d.s1[i][j];$(`s2-${i}-${j}`).value=d.s2[i][j];$(`es-${i}-${j}`).value=d.es[i][j];}}
+  $("elv").value=d.elv;$("left").value=d.left||3;attempts=JSON.parse(JSON.stringify(d.attempts||[]));renderAttempts();}
+function read(){const n=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0;};
+  const d={size:Math.max(1,Math.round(n("size"))),inv:[],s1:[],s2:[],es:[],ea:[],eb:[],elv:+$("elv").value,attempts:readAttempts(),runs:+$("runs").value,left:Math.max(1,Math.round(n("left")))};
+  for(let i=0;i<3;i++){d.inv.push([0,1].map(k=>[+$(`iv-${i}-${k}-l`).value,Math.max(0,Math.round(n(`iv-${i}-${k}-n`)))]));
+    d.ea.push(Math.max(0,Math.round(n("ea-"+i))));d.eb.push(Math.max(0,Math.round(n("eb-"+i))));
+    d.s1.push([0,1,2,3].map(j=>n(`s1-${i}-${j}`)));d.s2.push([0,1,2,3].map(j=>n(`s2-${i}-${j}`)));d.es.push([0,1,2,3].map(j=>n(`es-${i}-${j}`)));}
+  return d;}
+function validate(d){const bad=[];
+  d.attempts.forEach((a,i)=>{for(const [k,r] of [["Squad 1",a.r1],["Squad 2",a.r2]]){const s=r[0]+r[1]+r[2];if(Math.abs(s-100)>0.5)bad.push(`Attempt ${i+1}: ${k} ratio adds up to ${s}%, it needs 100%.`);}
+    if(a.rounds.length<2)bad.push(`Attempt ${i+1}: enter at least rounds 1 and 2.`);});
+  const have=d.inv.reduce((s,l)=>s+l[0][1]+l[1][1],0);if(have<2*d.size)bad.push(`You entered ${fmt(have)} troops, but two squads need ${fmt(2*d.size)}.`);
+  if(d.ea.reduce((a,b)=>a+b,0)===0||d.eb.reduce((a,b)=>a+b,0)===0)bad.push("Enter the troop counts of both enemy squads.");
+  return bad;}
+
+let worker=null;
+function run(){const d=read();const bad=validate(d);$("err").hidden=!bad.length;$("err").innerHTML=bad.join("<br>");if(bad.length)return;
+  store.set({...d,example:!$("ex").hidden});
+  if(worker)worker.terminate();
+  worker=new Worker(URL.createObjectURL(new Blob([$("engine-src").textContent],{type:"text/javascript"})));
+  $("go").disabled=true;$("status").textContent=d.attempts.length?"Calibrating hero strength from your attempts…":"Planning…";
+  worker.onmessage=ev=>{const m=ev.data;
+    if(m.type==="progress"){$("prog").style.width=(m.p*100).toFixed(1)+"%";}
+    else if(m.type==="calib"){$("status").textContent="Searching every pair of ratios…";renderCalib(m.f,d);}
+    else if(m.type==="done"){renderPlan(m.o,d);$("go").disabled=false;$("status").textContent=`Done. ${fmt(m.o.cands.length)} plans replayed ${fmt(d.runs)} times each.`;setTimeout(()=>$("prog").style.width="0",600);}
+    else if(m.type==="error"){$("go").disabled=false;$("status").textContent="Something went wrong: "+m.msg;}};
+  worker.postMessage(d);}
+function ratioHTML(r){return `<div class="ratio"><span class="i">${r[0]}</span><span class="s">/</span><span class="c">${r[1]}</span><span class="s">/</span><span class="a">${r[2]}</span></div><div class="bar"><i style="width:${r[0]}%;background:var(--inf)"></i><i style="width:${r[1]}%;background:var(--cav)"></i><i style="width:${r[2]}%;background:var(--arc)"></i></div>`;}
+const chipCls=p=>p>=0.5?"good":p>=0.15?"mid":"bad";
+function renderPlan(o,d){const b=o.best,over=1-Math.pow(1-b.win,d.left);
+  $("hero").innerHTML=`<div class="sq"><p class="label">Squad 1 · Inf / Cav / Arc</p>${ratioHTML(b.r1)}</div><div class="sq"><p class="label">Squad 2 · Inf / Cav / Arc</p>${ratioHTML(b.r2)}</div>`;
+  $("chips").innerHTML=`<span class="chip ${chipCls(b.win)}">${pct(b.win)} per attempt</span><span class="chip ${chipCls(over)}">${pct(over)} over ${d.left} attempt${d.left>1?"s":""}</span>`;
+  let h="<thead><tr><th>Troop</th><th>Squad 1</th><th>Squad 2</th></tr></thead><tbody>";const rows=[];
+  for(let i=0;i<3;i++){const lv=new Set();o.alloc.sq.forEach(s=>s.comp[i].forEach(([t])=>lv.add(t)));
+    [...lv].sort((a,c)=>c-a).forEach(t=>{const g=s=>{const x=s.comp[i].find(c=>c[0]===t);return x?x[1]:0;};h+=`<tr><td><span class="dot d${i}"></span>${TYPES[i]} Lv ${t}</td><td>${fmt(g(o.alloc.sq[0]))}</td><td>${fmt(g(o.alloc.sq[1]))}</td></tr>`;});}
+  h+=`<tr class="tot"><td>Total</td><td>${fmt(o.alloc.sq[0].n.reduce((a,c)=>a+c,0))}</td><td>${fmt(o.alloc.sq[1].n.reduce((a,c)=>a+c,0))}</td></tr>`;
+  $("plan").innerHTML=h+"</tbody>";
+  let c="<thead><tr><th>Squad 1 · Squad 2</th><th>Win</th><th>Enemy left</th></tr></thead><tbody>";
+  const show=o.cands.slice(0,6).concat(o.cands.filter((x,i)=>i>=6&&x.tags.length));
+  show.forEach((x,i)=>{const el=x.score<0?pct(-x.score):"0%";c+=`<tr><td>${x.r1.join("/")} · ${x.r2.join("/")}<br><span class="hint">${i===0?"Best":""}${x.tags.length?(i===0?" · ":"")+x.tags.join(", "):""}</span></td><td>${pct(x.win)}</td><td>${el}</td></tr>`;});
+  $("cmp").innerHTML=c+"</tbody>";}
+function renderCalib(f,d){
+  if(!d.attempts.length){$("factors").innerHTML="<dt>Status</dt><dd>Not calibrated</dd>";$("fit").innerHTML="";$("fitnote").textContent="Add a lost attempt to let the planner measure hero strength.";return;}
+  $("factors").innerHTML=`<dt>Your Squad 2 vs Squad 1</dt><dd>×${f.m2.toFixed(2)}</dd><dt>Enemy squad 1</dt><dd>×${f.mA.toFixed(2)}</dd><dt>Enemy squad 2</dt><dd>×${f.mB.toFixed(2)}</dd>`;
+  let h="<thead><tr><th>Round</th><th>Real</th><th>Model</th></tr></thead><tbody>";let worst=0;
+  let lastA=-1;f.rows.forEach(r=>{if(r.k===0)lastA++;const who=r.real[0]>0?"you":"enemy",idx=r.real[0]>0?0:1;const m=r.mod?r.mod[idx]:null;
+    const sz=idx===0?d.size:Math.max(d.ea.reduce((a,b)=>a+b,0),d.eb.reduce((a,b)=>a+b,0));if(m!==null)worst=Math.max(worst,Math.abs(m-r.real[idx])/sz);
+    h+=`<tr><td>A${lastA+1} · R${r.k+1} <span class="hint">${who} left</span></td><td>${fmt(r.real[idx])}</td><td>${m===null?"–":fmt(m)}</td></tr>`;});
+  $("fit").innerHTML=h+"</tbody>";
+  $("fitnote").textContent=`Largest gap between model and reality: ${(worst*100).toFixed(1)}% of a squad. Under about 5% means the plan can be trusted.`;}
+
+$("form").addEventListener("submit",ev=>{ev.preventDefault();run();});
+$("form").addEventListener("input",()=>{$("ex").hidden=true;});
+$("reset").addEventListener("click",()=>{fill(EXAMPLE);$("ex").hidden=false;run();});
+const saved=store.get();if(saved&&saved.inv){fill(saved);$("ex").hidden=!saved.example;}else fill(EXAMPLE);
+run();
+})();
+</script>
+</body>
+</html>

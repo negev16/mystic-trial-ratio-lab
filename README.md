@@ -37,10 +37,23 @@ kills   = army × attack / enemy defense × counter / 100
 
 Your numbers are saved in your browser, per zone.
 
+## Sunday: Radiant Spire Planner
+
+**▶ https://negev16.github.io/mystic-trial-ratio-lab/spire.html**
+
+Radiant Spire is two of your squads against two enemy squads: Squad 1 vs enemy 1, Squad 2 vs enemy 2, then the survivors fight on. The planner:
+
+1. Splits your troops by level between both squads (Squad 1 gets the highest level first).
+2. Learns hero strength from attempts you already lost: it fits one strength factor for your Squad 2 and for each enemy squad so the model reproduces the troops left after every round.
+3. Searches every pair of ratios, replays the best ones with the random procs, and gives the exact troop numbers per level for each squad.
+
+On stage 8-10 it reproduced six real rounds to within 1.5% and the recommended plan cleared the stage.
+
 ## Files
 
 | File | What it is |
 |---|---|
+| `spire.html` | The Sunday Radiant Spire planner (two squads, calibration from lost attempts). |
 | `index.html` | The calculator. One self-contained file, HTML + JavaScript, no install. |
 | `battle_sim.py` | The same engine in Python (standard library only) for testing and analysis. Run `python battle_sim.py --runs 1000`. |
 
