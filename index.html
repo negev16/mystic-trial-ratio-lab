@@ -385,7 +385,9 @@ function buildStatsTable(id,prefix){
 buildStatsTable("y-stats","y"); buildStatsTable("e-stats","e");
 for(const sel of [$("y-tier"),$("e-tier")]) sel.innerHTML=Object.keys(BASE).map(k=>`<option value="${k}">${TIER_LABEL[k]}</option>`).join("");
 
-$("zones").innerHTML=ZONES.map(z=>`<button type="button" class="zone" data-z="${z.id}" aria-pressed="false">${z.name}<small>${z.days}</small></button>`).join("");
+$("zones").innerHTML=ZONES.map(z=>z.id==="spire"
+  ?`<a class="zone" href="spire.html" style="text-decoration:none">${z.name}<small>${z.days} · planner →</small></a>`
+  :`<button type="button" class="zone" data-z="${z.id}" aria-pressed="false">${z.name}<small>${z.days}</small></button>`).join("");
 $("zones").addEventListener("click",e=>{const b=e.target.closest(".zone");if(!b)return;saveZone();setZone(b.dataset.z,true);});
 
 function fill(d){
@@ -582,7 +584,7 @@ try{window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",
 new MutationObserver(drawHeat).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
 
 /* boot */
-const saved=store.get("mtl.v1.zone"); setZone(ZONES.some(z=>z.id===saved)?saved:"molten",true);
+const saved=store.get("mtl.v1.zone"); setZone(ZONES.some(z=>z.id===saved&&z.id!=="spire")?saved:"molten",true);
 })();
 </script>
 </body>
